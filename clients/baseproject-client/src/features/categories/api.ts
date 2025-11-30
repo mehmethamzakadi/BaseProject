@@ -68,3 +68,10 @@ export async function getAllCategories(): Promise<Category[]> {
   // Boş array döndür
   return [];
 }
+
+export async function generateCategoryDescription(categoryName: string): Promise<string> {
+  const response = await api.get<{ description: string }>('/category/generate-description', {
+    params: { categoryName }
+  });
+  return response.data.description;
+}

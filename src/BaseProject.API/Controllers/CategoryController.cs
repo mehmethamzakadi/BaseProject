@@ -7,6 +7,7 @@ using BaseProject.Application.Features.Categories.Queries.GetPaginatedListByDyna
 using BaseProject.Domain.Common.Requests;
 using BaseProject.Domain.Common.Responses;
 using BaseProject.Domain.Constants;
+using BaseProject.Domain.Services;
 using BaseProject.Infrastructure.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BaseProject.API.Controllers
 {
-    public class CategoryController(IMediator mediator) : BaseApiController(mediator)
+    public class CategoryController(IMediator mediator, IAiService aiService) : BaseApiController(mediator)
     {
         [HttpPost("search")]
         [HasPermission(Permissions.CategoriesViewAll)]
@@ -62,6 +63,26 @@ namespace BaseProject.API.Controllers
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
             return ToResponse(await Mediator.Send(new DeleteCategoryCommand(id)));
+        }
+
+        [HttpGet("generate-description")]
+        [HasPermission(Permissions.CategoriesCreate)]
+        public async Task<IActionResult> GenerateDescription([FromQuery] string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return BadRequest(new { message = "Kategori adı boş olamaz." });
+            }
+
+            try
+            {
+                var description = await aiService.GenerateCategoryDescriptionAsync(categoryName);
+                return Ok(new { description });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Açıklama üretilirken bir hata oluştu.", error = ex.Message });
+            }
         }
     }
 }

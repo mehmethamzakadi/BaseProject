@@ -18,6 +18,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Polly;
+using Polly.Extensions.Http;
+using System.Net;
 using System.Text;
 using TokenOptions = BaseProject.Application.Options.TokenOptions;
 
@@ -32,6 +35,7 @@ namespace BaseProject.Infrastructure
             services.Configure<PasswordResetOptions>(configuration.GetSection(PasswordResetOptions.SectionName));
             services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
             services.Configure<ImageStorageOptions>(configuration.GetSection(ImageStorageOptions.SectionName));
+            services.Configure<Options.OllamaOptions>(configuration.GetSection(Options.OllamaOptions.SectionName));
 
             // Custom Password Hasher for User entity
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -144,6 +148,19 @@ namespace BaseProject.Infrastructure
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IImageStorageService, ImageStorageService>();
             services.AddScoped<IUserDomainService, Domain.Services.UserDomainService>();
+            
+            // Ollama AI Service - Best practices: IHttpClientFactory + Polly retry policy
+            var ollamaOptions = configuration.GetSection(Options.OllamaOptions.SectionName).Get<Options.OllamaOptions>()
+                ?? throw new InvalidOperationException("Ollama ayarları yapılandırılmalıdır.");
+            
+            services.AddHttpClient("OllamaClient", client =>
+            {
+                client.BaseAddress = new Uri(ollamaOptions.Endpoint);
+                client.Timeout = TimeSpan.FromMinutes(ollamaOptions.TimeoutMinutes);
+            })
+            .AddPolicyHandler(GetRetryPolicy(ollamaOptions));
+            
+            services.AddScoped<IAiService, AiService>();
 
             // Authorization
             services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
@@ -161,6 +178,26 @@ namespace BaseProject.Infrastructure
             services.AddHostedService<LogCleanupService>();
 
             return services;
+        }
+
+        /// <summary>
+        /// Ollama API için retry policy oluşturur.
+        /// Best practice: Transient hatalar için exponential backoff retry.
+        /// </summary>
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(Options.OllamaOptions options)
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError() // 5xx ve 408 (Request Timeout) hatalarını yakalar
+                .OrResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests) // 429 Rate Limit
+                .WaitAndRetryAsync(
+                    retryCount: options.RetryCount,
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(
+                        Math.Pow(2, retryAttempt) * options.RetryDelaySeconds), // Exponential backoff
+                    onRetry: (outcome, timespan, retryCount, context) =>
+                    {
+                        // Logging için (opsiyonel - ILogger inject edilebilir)
+                        // Burada sadece policy tanımlanıyor, logging servis içinde yapılıyor
+                    });
         }
     }
 }

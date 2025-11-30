@@ -38,6 +38,8 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 - 📊 **Activity Logging** - Detaylı aktivite takibi
 - 🔒 **Rate Limiting** - DDoS koruması
 - 📝 **Serilog** - Yapılandırılmış loglama (Console, File, PostgreSQL, Seq)
+- 🤖 **AI-Powered Content Generation** - Ollama (Qwen 2.5:7b) ile yapay zeka destekli içerik üretme
+- 🔄 **Resilience Patterns** - Polly retry policy ile dayanıklı HTTP istekleri
 
 ### Frontend
 - ⚛️ **React 18** - Modern UI framework
@@ -52,6 +54,7 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 - 🐳 **Docker & Docker Compose** - Container orchestration
 - 🔄 **CI/CD Ready** - Pipeline hazır yapı
 - 📈 **Seq Integration** - Merkezi log yönetimi
+- 🤖 **Ollama Integration** - Docker container'da AI model desteği
 
 ---
 
@@ -127,6 +130,8 @@ BaseProject/
 │   │   └── Services/
 │   ├── BaseProject.Infrastructure/      # External Services
 │   │   ├── Services/
+│   │   ├── Models/
+│   │   │   └── Ollama/                  # AI API Models
 │   │   ├── Consumers/
 │   │   └── Authorization/
 │   └── BaseProject.Persistence/         # Data Access
@@ -162,6 +167,7 @@ BaseProject/
 - [PostgreSQL 16](https://www.postgresql.org/) (Docker ile otomatik)
 - [Redis](https://redis.io/) (Docker ile otomatik)
 - [RabbitMQ](https://www.rabbitmq.com/) (Docker ile otomatik)
+- [Ollama](https://ollama.ai/) (Docker ile otomatik - AI model desteği için)
 
 ### Docker ile Hızlı Başlangıç
 
@@ -171,10 +177,13 @@ git clone https://github.com/mehmethamzakadi/BaseProject.git
 cd BaseProject
 
 # Tüm servisleri başlat
-docker-compose up -d
+docker-compose -f docker-compose.local.yml up -d
+
+# Ollama modelini yükle (ilk kez)
+docker exec -it baseproject_ollama_dev ollama pull qwen2.5:7b
 
 # Logları izle
-docker-compose logs -f baseproject.api
+docker-compose -f docker-compose.local.yml logs -f baseproject.api
 ```
 
 ### Manuel Kurulum
@@ -183,7 +192,10 @@ docker-compose logs -f baseproject.api
 
 ```bash
 # Sadece bağımlılık servislerini başlat
-docker-compose up -d postgresdb redis.cache rabbitmq seq
+docker-compose -f docker-compose.local.yml up -d postgresdb redis.cache rabbitmq seq ollama
+
+# Ollama modelini yükle (ilk kez)
+docker exec -it baseproject_ollama_dev ollama pull qwen2.5:7b
 ```
 
 #### 2. Backend'i Çalıştır
@@ -260,6 +272,11 @@ cp .env.example .env.production
 | `RabbitMQOptions__HostName` | RabbitMQ host | `localhost` |
 | `RabbitMQOptions__UserName` | RabbitMQ kullanıcı | `baseproject` |
 | `RabbitMQOptions__Password` | RabbitMQ şifre | - |
+| `OllamaOptions__Endpoint` | Ollama API endpoint | `http://localhost:11434` |
+| `OllamaOptions__ModelId` | Ollama model ID | `qwen2.5:7b` |
+| `OllamaOptions__TimeoutMinutes` | HTTP timeout (dakika) | `2` |
+| `OllamaOptions__RetryCount` | Retry sayısı | `3` |
+| `OllamaOptions__RetryDelaySeconds` | Retry gecikmesi (saniye) | `2` |
 
 ---
 
@@ -281,6 +298,7 @@ http://localhost:5000/scalar/v1
 | `/api/auth/register` | POST | Kullanıcı kaydı | ❌ |
 | `/api/auth/refresh-token` | POST | Token yenileme | ❌ |
 | `/api/category` | GET | Kategori listesi | ❌ |
+| `/api/category/generate-description` | GET | AI ile kategori açıklaması üret | ✅ |
 | `/api/user` | GET | Kullanıcı listesi | ✅ |
 | `/api/role` | GET | Rol listesi | ✅ |
 | `/api/Dashboards/statistics` | GET | Dashboard istatistikleri | ✅ |
@@ -304,6 +322,12 @@ curl -X POST http://localhost:5000/api/Category \
     "name": "Yeni Kategori",
     "description": "Kategori açıklaması"
   }'
+```
+
+#### AI ile Kategori Açıklaması Üretme
+```bash
+curl -X GET "http://localhost:5000/api/category/generate-description?categoryName=Teknoloji" \
+  -H "Authorization: Bearer {token}"
 ```
 
 ---
@@ -380,6 +404,23 @@ http://localhost:15672
 
 Kullanıcı/Şifre: `baseproject/supersecret`
 
+### Ollama AI Service
+
+Ollama servisi Docker container'ında çalışmaktadır. Model yükleme ve yönetimi için:
+
+```bash
+# Model listesi
+docker exec baseproject_ollama_dev ollama list
+
+# Yeni model yükle
+docker exec baseproject_ollama_dev ollama pull qwen2.5:7b
+
+# Model sil
+docker exec baseproject_ollama_dev ollama rm qwen2.5:7b
+```
+
+API Endpoint: `http://localhost:11434`
+
 ### Redis Commander (Opsiyonel)
 
 ```bash
@@ -398,6 +439,7 @@ docker run -d -p 8081:8081 --name redis-commander \
 - **CORS Policy:** Yapılandırılabilir origin kontrolü
 - **SQL Injection:** Parametreli sorgular (EF Core)
 - **XSS Protection:** Input validation ve sanitization
+- **AI Service Security:** Timeout ve retry mekanizmaları ile güvenli API çağrıları
 
 ---
 

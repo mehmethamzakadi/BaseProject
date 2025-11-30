@@ -7,11 +7,11 @@ import {
   useReactTable
 } from '@tanstack/react-table';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { PlusCircle, Pencil, Trash2, ArrowUpDown, ChevronRight, ChevronDown, FolderTree } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, ArrowUpDown, ChevronRight, ChevronDown, FolderTree, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { createCategory, updateCategory, deleteCategory, getAllCategories } from '../../features/categories/api';
+import { createCategory, updateCategory, deleteCategory, getAllCategories, generateCategoryDescription } from '../../features/categories/api';
 import {
   Category,
   CategoryFormValues
@@ -314,6 +314,27 @@ export function CategoriesPage() {
     onError: (error) => handleApiError(error, 'Kategori silinemedi')
   });
 
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+
+  const handleGenerateDescription = async () => {
+    const categoryName = formMethods.getValues('name');
+    if (!categoryName || categoryName.trim().length < 5) {
+      toast.error('Lütfen önce kategori adını girin (en az 5 karakter)');
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    try {
+      const description = await generateCategoryDescription(categoryName);
+      formMethods.setValue('description', description);
+      toast.success('Açıklama başarıyla üretildi!');
+    } catch (error) {
+      handleApiError(error, 'Açıklama üretilirken bir hata oluştu');
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
 
   const formMethods = useForm<CategoryFormSchema>({
     resolver: zodResolver(categorySchema),
@@ -398,7 +419,20 @@ export function CategoriesPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category-description">Açıklama</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="category-description">Açıklama</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateDescription}
+                      disabled={isGeneratingDescription || !formMethods.watch('name') || formMethods.watch('name')?.length < 5}
+                      className="gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {isGeneratingDescription ? 'Üretiliyor...' : 'Yapay Zeka ile Üret ✨'}
+                    </Button>
+                  </div>
                   <textarea
                     id="category-description"
                     placeholder="Kategori açıklaması..."
@@ -533,7 +567,20 @@ export function CategoriesPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-category-description">Açıklama</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-category-description">Açıklama</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGeneratingDescription || !formMethods.watch('name') || formMethods.watch('name')?.length < 5}
+                  className="gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isGeneratingDescription ? 'Üretiliyor...' : 'Yapay Zeka ile Üret ✨'}
+                </Button>
+              </div>
               <textarea
                 id="edit-category-description"
                 placeholder="Kategori açıklaması..."

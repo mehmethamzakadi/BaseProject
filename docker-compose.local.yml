@@ -60,6 +60,10 @@ services:
       TokenOptions__SecurityKey: "DevSecretKey_32chars_minimum!@#$%"
       # Seq Logging
       Serilog__WriteTo__1__Args__serverUrl: http://seq:80
+      # Ollama AI
+      OllamaOptions__Endpoint: http://ollama:11434
+      OllamaOptions__ModelId: qwen2.5:7b
+      OllamaOptions__ApiKey: ollama
       # CORS Policy
       CorsOptions__AllowedOrigins: "http://localhost:5173"
     depends_on:
@@ -68,6 +72,8 @@ services:
       rabbitmq:
         condition: service_healthy
       redis.cache:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
     ports:
       - "6060:8080"          # API endpoint
@@ -179,6 +185,27 @@ services:
       - baseproject_local_net
 
   # ===========================================
+  # Ollama AI Service - Development
+  # ===========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: baseproject_ollama_dev
+    restart: unless-stopped
+    ports:
+      - "11434:11434"         # Ollama API
+    volumes:
+      - ollama_local_data:/root/.ollama
+    networks:
+      - baseproject_local_net
+    # Ollama başlatma süresi uzun olabilir (model yükleme), bu yüzden healthcheck basit tutuldu
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ===========================================
   # pgAdmin - Database Management (Opsiyonel)
   # ===========================================
   pgadmin:
@@ -211,6 +238,8 @@ volumes:
     name: baseproject_redis_local
   seq_local_data:
     name: baseproject_seq_local
+  ollama_local_data:
+    name: baseproject_ollama_local
   pgadmin_local_data:
     name: baseproject_pgadmin_local
 

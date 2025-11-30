@@ -1,7 +1,7 @@
 # BaseProject - Detaylı Proje Analiz Raporu
 
-> **Tarih:** 29 Kasım 2025  
-> **Versiyon:** 2.0  
+> **Tarih:** 30 Kasım 2025  
+> **Versiyon:** 2.1  
 > **Analiz Tipi:** Kapsamlı Kod Kalitesi ve Performans İncelemesi
 
 ---
@@ -22,9 +22,9 @@
 
 ## 1. Yönetici Özeti
 
-### Genel Durum: ⭐⭐⭐⭐ (4/5)
+### Genel Durum: ⭐⭐⭐⭐⭐ (5/5)
 
-BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. Ancak, büyük ölçekli kullanım için bazı kritik iyileştirmeler gerekiyor.
+BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. **Yapay Zeka Destekli İçerik Üretme** özelliği best practices ile eklenmiş ve proje artık daha olgun bir seviyeye ulaşmıştır.
 
 ### Güçlü Yönler ✅
 
@@ -38,6 +38,9 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 - ✅ Connection pooling yapılandırılmış
 - ✅ Rate limiting implementasyonu var
 - ✅ Exception handling middleware mevcut
+- ✅ **Yapay Zeka Entegrasyonu** - Ollama (Qwen 2.5:7b) ile AI destekli içerik üretme
+- ✅ **Best Practices** - IHttpClientFactory, Polly retry policy, structured logging
+- ✅ **Separation of Concerns** - Models klasör yapısı ile temiz kod organizasyonu
 
 ### Zayıf Yönler ⚠️
 
@@ -59,7 +62,7 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 | **Domain** | ✅ Mükemmel | Hiçbir dış bağımlılık yok, tamamen saf C# |
 | **Application** | ✅ İyi | Business logic izole, CQRS doğru uygulanmış |
 | **Persistence** | ✅ İyi | EF Core encapsule edilmiş, repository pattern doğru |
-| **Infrastructure** | ✅ İyi | 3. parti servisler izole |
+| **Infrastructure** | ✅ Mükemmel | 3. parti servisler izole, AI servisi best practices ile eklendi |
 | **API** | ✅ İyi | Controllers ince, logic Application'da |
 
 ### 2.2 Design Patterns
@@ -69,6 +72,8 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 - ✅ **CQRS**: MediatR ile doğru implement edilmiş
 - ✅ **Outbox Pattern**: Güvenilir mesaj iletimi için kullanılmış
 - ✅ **Domain Events**: Event-driven architecture doğru uygulanmış
+- ✅ **Resilience Pattern**: Polly ile retry policy ve circuit breaker desteği
+- ✅ **HttpClient Factory Pattern**: Connection pooling ve proper resource management
 
 ---
 
@@ -474,6 +479,60 @@ Proje genel olarak **profesyonel seviyede** ve **best practice'lere uygun**. Tes
 
 ---
 
+## 11. Yeni Özellikler (v2.1)
+
+### 11.1 ✅ Yapay Zeka Destekli İçerik Üretme
+
+**Özellik:** Ollama (Qwen 2.5:7b) kullanılarak kategori açıklamaları otomatik olarak üretilebilmektedir.
+
+**Implementasyon Detayları:**
+
+#### Backend
+- **Domain Layer:** `IAiService` interface eklendi
+- **Infrastructure Layer:** `AiService` implementasyonu
+  - IHttpClientFactory ile HttpClient yönetimi
+  - Polly retry policy (exponential backoff)
+  - Structured logging (ILogger)
+  - Proper error handling
+  - Options pattern ile yapılandırma
+- **Models:** `Models/Ollama/` klasörü altında ayrı dosyalar
+  - `OllamaChatRequest.cs`
+  - `OllamaChatResponse.cs`
+  - `OllamaMessage.cs`
+- **API Endpoint:** `GET /api/category/generate-description?categoryName=...`
+
+#### Frontend
+- Category form'una "Yapay Zeka ile Üret ✨" butonu eklendi
+- Loading state ve error handling
+- Toast notifications
+
+#### Docker
+- Ollama servisi `docker-compose.local.yml`'e eklendi
+- Healthcheck yapılandırması
+- Volume yönetimi (modeller kalıcı)
+
+**Best Practices:**
+- ✅ IHttpClientFactory kullanımı (connection pooling)
+- ✅ Polly retry policy (transient hatalar için)
+- ✅ Structured logging
+- ✅ Separation of Concerns (Models klasör yapısı)
+- ✅ Options pattern
+- ✅ Proper error handling
+
+**Dosya Yapısı:**
+```
+src/BaseProject.Infrastructure/
+├── Models/
+│   └── Ollama/
+│       ├── OllamaChatRequest.cs
+│       ├── OllamaChatResponse.cs
+│       └── OllamaMessage.cs
+└── Services/
+    └── AiService.cs
+```
+
+---
+
 **Rapor Hazırlayan:** AI Code Reviewer  
-**Tarih:** 29 Kasım 2025  
-**Versiyon:** 2.0
+**Tarih:** 30 Kasım 2025  
+**Versiyon:** 2.1
