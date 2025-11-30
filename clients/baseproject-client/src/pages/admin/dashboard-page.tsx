@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { FolderKanban, Users, Shield, Activity } from 'lucide-react';
+import { FolderKanban, Users, Shield, Activity as ActivityIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { StatCard } from '../../components/dashboard/stat-card';
@@ -90,7 +90,7 @@ export function DashboardPage() {
           title="Aktiviteler"
           value={recentActivities.length}
           description="Son aktivite sayısı"
-          icon={Activity}
+          icon={ActivityIcon}
           color="yellow"
           delay={0.3}
         />
@@ -127,7 +127,7 @@ export function DashboardPage() {
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
               <Link to="/admin/activity-logs">
-                <Activity className="mr-2 h-4 w-4" />
+                <ActivityIcon className="mr-2 h-4 w-4" />
                 Aktivite Logları
               </Link>
             </Button>

@@ -47,7 +47,7 @@ public static class SerilogConfiguration
 
             // File sink - Her gün yeni dosya, 31 gün saklama
             .WriteTo.File(
-                path: "logs/blogapp-.txt",
+                path: "logs/baseproject-.txt",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 31,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",

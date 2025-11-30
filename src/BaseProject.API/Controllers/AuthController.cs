@@ -13,7 +13,7 @@ namespace BaseProject.API.Controllers
 {
     public class AuthController(IMediator mediator) : BaseApiController(mediator)
     {
-        private const string RefreshTokenCookieName = "blogapp_refresh_token";
+        private const string RefreshTokenCookieName = "baseproject_refresh_token";
 
         [AllowAnonymous]
         [HttpPost("register")]

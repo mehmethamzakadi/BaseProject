@@ -31,7 +31,7 @@ export function useAuth() {
           attributes.push(`Domain=${domain}`);
         }
 
-        document.cookie = `${encodeURIComponent('blogapp_refresh_token')}=; ${attributes.join('; ')};`;
+        document.cookie = `${encodeURIComponent('baseproject_refresh_token')}=; ${attributes.join('; ')};`;
       }
     }
   }, [logoutStore]);

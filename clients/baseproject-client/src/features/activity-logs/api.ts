@@ -4,7 +4,7 @@ import { ActivityLog } from './types';
 
 export async function getActivityLogs(request: DataGridRequest): Promise<PaginatedListResponse<ActivityLog>> {
   const response = await api.post<PaginatedListResponse<ActivityLog>>(
-    '/ActivityLogs/search',
+    '/activitylogs/search',
     request
   );
   return response.data;

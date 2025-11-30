@@ -1,11 +1,11 @@
 #!/bin/bash
-# BlogApp Quick Load Test Script
+# BaseProject Quick Load Test Script
 # Linux/macOS için hızlı test başlatma script'i
 
 set -e
 
 echo "========================================"
-echo "  BlogApp Load Test Başlatılıyor"
+echo "  BaseProject Load Test Başlatılıyor"
 echo "========================================"
 echo ""
 
@@ -26,7 +26,7 @@ if ! curl -s http://localhost:6060/api/category > /dev/null 2>&1; then
     echo "[HATA] API'ye bağlanılamıyor!"
     echo ""
     echo "API'yi başlatmak için:"
-    echo "  cd src/BlogApp.API"
+    echo "  cd src/BaseProject.API"
     echo "  dotnet run --urls http://localhost:6060"
     echo ""
     echo "veya Docker ile:"

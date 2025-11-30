@@ -1,13 +1,13 @@
 # Güvenlik Yapılandırması Rehberi
 
-Bu rehber, BlogApp projesinde hassas bilgilerin (secret keys, şifreler, API anahtarları) nasıl güvenli bir şekilde yönetileceğini açıklar.
+Bu rehber, BaseProject projesinde hassas bilgilerin (secret keys, şifreler, API anahtarları) nasıl güvenli bir şekilde yönetileceğini açıklar.
 
 ## 🔐 User Secrets Kurulumu
 
 ### 1. User Secrets'ı Başlat
 
 ```bash
-cd src/BlogApp.API
+cd src/BaseProject.API
 dotnet user-secrets init
 ```
 
@@ -15,7 +15,7 @@ dotnet user-secrets init
 
 ```bash
 # Veritabanı bağlantı bilgileri
-dotnet user-secrets set "ConnectionStrings:BlogAppPostgreConnectionString" "Host=localhost;Port=5435;Database=BlogAppDb;Username=postgres;Password=YOUR_PASSWORD;Include Error Detail=true;Pooling=true;Minimum Pool Size=5;Maximum Pool Size=100"
+dotnet user-secrets set "ConnectionStrings:BaseProjectPostgreConnectionString" "Host=localhost;Port=5435;Database=BaseProjectDb;Username=postgres;Password=YOUR_PASSWORD;Include Error Detail=true;Pooling=true;Minimum Pool Size=5;Maximum Pool Size=100"
 
 # Redis bağlantı bilgileri
 dotnet user-secrets set "ConnectionStrings:RedisCache" "localhost:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000"
@@ -26,7 +26,7 @@ dotnet user-secrets set "TokenOptions:Audience" "https://localhost:5000"
 dotnet user-secrets set "TokenOptions:Issuer" "https://localhost:5000"
 
 # RabbitMQ
-dotnet user-secrets set "RabbitMQOptions:UserName" "blogapp"
+dotnet user-secrets set "RabbitMQOptions:UserName" "baseproject"
 dotnet user-secrets set "RabbitMQOptions:Password" "YOUR_RABBITMQ_PASSWORD"
 
 # Email (opsiyonel)
@@ -43,7 +43,7 @@ dotnet user-secrets list
 ### 4. Secret Sil
 
 ```bash
-dotnet user-secrets remove "ConnectionStrings:BlogAppPostgreConnectionString"
+dotnet user-secrets remove "ConnectionStrings:BaseProjectPostgreConnectionString"
 ```
 
 ---
@@ -60,12 +60,12 @@ Proje kök dizininde `.env` dosyası oluşturun:
 # .env dosyası (Git'e eklemeyin!)
 
 # PostgreSQL
-POSTGRES_DB=BlogAppDb
+POSTGRES_DB=BaseProjectDb
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_secure_password
 
 # RabbitMQ
-RABBITMQ_DEFAULT_USER=blogapp
+RABBITMQ_DEFAULT_USER=baseproject
 RABBITMQ_DEFAULT_PASS=your_rabbitmq_password
 
 # Seq
@@ -81,12 +81,12 @@ TOKEN_SECURITY_KEY=your_super_secret_key_at_least_32_characters_long
 # .env.example (Bu dosyayı Git'e ekleyin)
 
 # PostgreSQL
-POSTGRES_DB=BlogAppDb
+POSTGRES_DB=BaseProjectDb
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=
 
 # RabbitMQ
-RABBITMQ_DEFAULT_USER=blogapp
+RABBITMQ_DEFAULT_USER=baseproject
 RABBITMQ_DEFAULT_PASS=
 
 # Seq
@@ -118,10 +118,10 @@ builder.Configuration.AddAzureKeyVault(
 apiVersion: v1
 kind: Secret
 metadata:
-  name: blogapp-secrets
+  name: baseproject-secrets
 type: Opaque
 stringData:
-  ConnectionStrings__BlogAppPostgreConnectionString: "Host=..."
+  ConnectionStrings__BaseProjectPostgreConnectionString: "Host=..."
   TokenOptions__SecurityKey: "your-key"
 ```
 

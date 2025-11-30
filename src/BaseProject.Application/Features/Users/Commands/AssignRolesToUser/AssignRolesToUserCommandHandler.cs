@@ -4,7 +4,7 @@ using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Events.UserEvents;
 using BaseProject.Domain.Repositories;
 using MediatR;
-using IResult = BlogApp.Domain.Common.Results.IResult;
+using IResult = BaseProject.Domain.Common.Results.IResult;
 
 namespace BaseProject.Application.Features.Users.Commands.AssignRolesToUser;
 

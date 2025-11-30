@@ -1,4 +1,4 @@
-# BlogApp Test Suite
+# BaseProject Test Suite
 
 ## Test Coverage
 

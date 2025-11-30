@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TokenOptions = BlogApp.Application.Options.TokenOptions;
+using TokenOptions = BaseProject.Application.Options.TokenOptions;
 
 namespace BaseProject.Infrastructure
 {
@@ -74,7 +74,7 @@ namespace BaseProject.Infrastructure
                 services.AddStackExchangeRedisCache(options =>
                 {
                     options.Configuration = redisConnectionString;
-                    options.InstanceName = "BlogApp_";
+                    options.InstanceName = "BaseProject_";
                 });
             }
             else

@@ -40,6 +40,31 @@ export async function deleteCategory(id: string) {
 }
 
 export async function getAllCategories(): Promise<Category[]> {
-  const response = await api.get<Category[]>('/category');
-  return response.data;
+  const response = await api.get('/category');
+  const data = response.data;
+  
+  // Backend'den direkt array geliyorsa
+  if (Array.isArray(data)) {
+    return data.map((item: any) => ({
+      id: item.id || item.Id,
+      name: item.name || item.Name,
+      description: item.description || item.Description,
+      parentId: item.parentId || item.ParentId,
+      createdDate: item.createdDate || item.CreatedDate || new Date().toISOString()
+    }));
+  }
+  
+  // Eğer wrapper içindeyse
+  if (data && Array.isArray(data.data)) {
+    return data.data.map((item: any) => ({
+      id: item.id || item.Id,
+      name: item.name || item.Name,
+      description: item.description || item.Description,
+      parentId: item.parentId || item.ParentId,
+      createdDate: item.createdDate || item.CreatedDate || new Date().toISOString()
+    }));
+  }
+  
+  // Boş array döndür
+  return [];
 }

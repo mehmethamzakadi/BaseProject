@@ -29,9 +29,9 @@ public class UserSeeder : BaseSeeder
         var userDataList = new[]
         {
             new { Id = Guid.Parse("00000000-0000-0000-0000-000000000001"), UserName = "admin", Email = "admin@admin.com", Phone = (string?)null, PhoneConfirmed = false, EmailConfirmed = true },
-            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000002"), UserName = "editor_lara", Email = "editor@blogapp.dev", Phone = (string?)"+905551112233", PhoneConfirmed = true, EmailConfirmed = true },
-            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000003"), UserName = "moderator_selim", Email = "moderator@blogapp.dev", Phone = (string?)null, PhoneConfirmed = false, EmailConfirmed = true },
-            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000004"), UserName = "author_melike", Email = "author@blogapp.dev", Phone = (string?)"+905559998877", PhoneConfirmed = true, EmailConfirmed = true }
+            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000002"), UserName = "editor_lara", Email = "editor@baseproject.dev", Phone = (string?)"+905551112233", PhoneConfirmed = true, EmailConfirmed = true },
+            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000003"), UserName = "moderator_selim", Email = "moderator@baseproject.dev", Phone = (string?)null, PhoneConfirmed = false, EmailConfirmed = true },
+            new { Id = Guid.Parse("00000000-0000-0000-0000-000000000004"), UserName = "author_melike", Email = "author@baseproject.dev", Phone = (string?)"+905559998877", PhoneConfirmed = true, EmailConfirmed = true }
         };
 
         var users = new List<User>();

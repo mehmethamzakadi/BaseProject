@@ -40,47 +40,28 @@ public class RolePermissionSeeder : BaseSeeder
         // Admin - Tüm yetkiler
         AddPermissions(rolePermissions, adminRoleId, Permissions.GetAllPermissions(), permissions, grantedAt);
 
-        // Editor - Post ve kategori yönetimi
+        // Editor - Kategori yönetimi
         AddPermissions(rolePermissions, editorRoleId, new[]
         {
-            Permissions.PostsCreate,
-            Permissions.PostsRead,
-            Permissions.PostsUpdate,
-            Permissions.PostsDelete,
-            Permissions.PostsViewAll,
-            Permissions.PostsPublish,
             Permissions.CategoriesCreate,
             Permissions.CategoriesRead,
             Permissions.CategoriesUpdate,
+            Permissions.CategoriesDelete,
             Permissions.CategoriesViewAll,
-            Permissions.CommentsRead,
-            Permissions.CommentsModerate,
-            Permissions.CommentsDelete,
+            Permissions.MediaUpload,
             Permissions.DashboardView
         }, permissions, grantedAt);
 
         // Moderator - İçerik moderasyonu
         AddPermissions(rolePermissions, moderatorRoleId, new[]
         {
-            Permissions.CommentsRead,
-            Permissions.CommentsViewAll,
-            Permissions.CommentsModerate,
-            Permissions.CommentsDelete,
-            Permissions.PostsRead
+            Permissions.CategoriesRead,
+            Permissions.CategoriesViewAll,
+            Permissions.DashboardView
         }, permissions, grantedAt);
 
         // User - Temel yetkiler
-        AddPermissions(rolePermissions, userRoleId, new[]
-        {
-            Permissions.PostsCreate,
-            Permissions.PostsRead,
-            Permissions.PostsUpdate,
-            Permissions.CategoriesRead,
-            Permissions.CategoriesViewAll,
-            Permissions.CommentsCreate,
-            Permissions.CommentsRead,
-            Permissions.CommentsUpdate
-        }, permissions, grantedAt);
+        AddPermissions(rolePermissions, userRoleId, Permissions.GetUserPermissions(), permissions, grantedAt);
 
         // Mevcut role-permission ilişkilerini kontrol et
         var existingRelations = await Context.RolePermissions

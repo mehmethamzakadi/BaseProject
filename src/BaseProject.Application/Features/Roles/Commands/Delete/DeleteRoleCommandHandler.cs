@@ -3,7 +3,7 @@ using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using IResult = BlogApp.Domain.Common.Results.IResult;
+using IResult = BaseProject.Domain.Common.Results.IResult;
 
 namespace BaseProject.Application.Features.Roles.Commands.Delete;
 

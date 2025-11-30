@@ -39,31 +39,31 @@ public sealed class RoleRepository(BaseProjectDbContext context) : EfRepositoryB
         }
     }
 
-    public async Task<IResult> DeleteRole(Role role)
+    public Task<IResult> DeleteRole(Role role)
     {
         try
         {
             Context.Roles.Remove(role);
             // ✅ REMOVED: SaveChanges - UnitOfWork is responsible for transaction management
-            return new SuccessResult("Rol başarıyla silindi.");
+            return Task.FromResult<IResult>(new SuccessResult("Rol başarıyla silindi."));
         }
         catch (Exception ex)
         {
-            return new ErrorResult($"Rol silinirken hata oluştu: {ex.Message}");
+            return Task.FromResult<IResult>(new ErrorResult($"Rol silinirken hata oluştu: {ex.Message}"));
         }
     }
 
-    public async Task<IResult> UpdateRole(Role role)
+    public Task<IResult> UpdateRole(Role role)
     {
         try
         {
             Context.Roles.Update(role);
             // ✅ REMOVED: SaveChanges - UnitOfWork is responsible for transaction management
-            return new SuccessResult("Rol başarıyla güncellendi.");
+            return Task.FromResult<IResult>(new SuccessResult("Rol başarıyla güncellendi."));
         }
         catch (Exception ex)
         {
-            return new ErrorResult($"Rol güncellenirken hata oluştu: {ex.Message}");
+            return Task.FromResult<IResult>(new ErrorResult($"Rol güncellenirken hata oluştu: {ex.Message}"));
         }
     }
 
@@ -91,5 +91,10 @@ public sealed class RoleRepository(BaseProjectDbContext context) : EfRepositoryB
         return await Query()
             .Where(r => roleIds.Contains(r.Id))
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await Query().CountAsync(cancellationToken);
     }
 }

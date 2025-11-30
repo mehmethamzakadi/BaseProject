@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth-store';
 import toast from 'react-hot-toast';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:6060'}/api`,
   withCredentials: true
 });
 
@@ -38,8 +38,9 @@ export const refreshAccessToken = async (): Promise<string> => {
   isRefreshing = true;
 
   try {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:6060';
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
+      `${apiUrl}/api/auth/refresh-token`,
       {},
       { withCredentials: true }
     );

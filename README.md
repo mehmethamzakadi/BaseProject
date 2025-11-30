@@ -208,14 +208,48 @@ cd clients/baseproject-client
 # Bağımlılıkları yükle
 npm install
 
-# .env.local dosyası oluştur
-echo "VITE_API_URL=http://localhost:5000/api" > .env.local
+# Environment variables otomatik yüklenir (.env.development)
+# Gerekirse clients/baseproject-client/.env.development dosyasını güncelleyin
 
 # Development server başlat
 npm run dev
 ```
 
 ### Environment Variables
+
+Proje kök dizininde ortam bazlı `.env` dosyaları kullanılır:
+
+#### Development Ortamı (`.env.development`)
+```bash
+# Development için hazır değerlerle gelir
+cp .env.example .env.development
+# Gerekirse değerleri güncelleyin
+```
+
+#### Production Ortamı (`.env.production`)
+```bash
+# Production için .env.production dosyasını oluşturun
+cp .env.example .env.production
+# ÖNEMLİ: Tüm değerleri production ortamınıza göre güncelleyin!
+```
+
+#### Environment Variables Listesi
+
+| Değişken | Açıklama | Development | Production |
+|----------|----------|-------------|------------|
+| `POSTGRES_DB` | Veritabanı adı | `BaseProjectDb` | `BaseProjectDb` |
+| `POSTGRES_USER` | DB kullanıcı adı | `postgres` | `baseproject_user` |
+| `POSTGRES_PASSWORD` | DB şifresi | `postgres` | **Güçlü şifre** |
+| `RABBITMQ_DEFAULT_USER` | RabbitMQ kullanıcı | `baseproject` | `baseproject` |
+| `RABBITMQ_DEFAULT_PASS` | RabbitMQ şifre | `supersecret` | **Güçlü şifre** |
+| `REDIS_PASSWORD` | Redis şifre | (boş) | **Güçlü şifre** |
+| `SEQ_ADMIN_PASSWORD` | Seq admin şifre | `Admin123!` | **Güçlü şifre** |
+| `TOKEN_SECURITY_KEY` | JWT secret key | `DevSecretKey...` | **32+ karakter** |
+| `APP_URL` | Uygulama URL | `http://localhost:5173` | `https://yourdomain.com` |
+
+**ÖNEMLİ:** Production ortamında mutlaka güçlü şifreler ve secret key'ler kullanın!
+
+#### .NET Environment Variables
 
 | Değişken | Açıklama | Varsayılan |
 |----------|----------|------------|

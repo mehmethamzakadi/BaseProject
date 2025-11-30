@@ -107,4 +107,9 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
         };
         await Context.UserRoles.AddAsync(newUserRole, cancellationToken);
     }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await Query().CountAsync(cancellationToken);
+    }
 }

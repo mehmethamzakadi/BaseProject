@@ -7,7 +7,7 @@
     <ProjectGuid>5b777b5b-ca41-49fa-b49d-42dd01f6cc35</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}/scalar</DockerServiceUrl>
-    <DockerServiceName>blogapp.api</DockerServiceName>
+    <DockerServiceName>baseproject.api</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
     <None Include="CODE_REVIEW_REPORT.md" />

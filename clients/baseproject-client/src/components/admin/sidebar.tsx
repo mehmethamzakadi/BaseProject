@@ -51,7 +51,7 @@ export function AdminSidebar({ collapsed }: { collapsed: boolean }) {
       )}
     >
       <div className="flex h-16 items-center justify-center border-b text-lg font-semibold">
-        {collapsed ? 'BA' : 'BlogApp'}
+        {collapsed ? 'BP' : 'BaseProject'}
       </div>
       <nav className="space-y-1 p-4">
         {visibleLinks.map((link) => (

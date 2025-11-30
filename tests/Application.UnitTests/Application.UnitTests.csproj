@@ -27,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BlogApp.Application\BlogApp.Application.csproj" />
-    <ProjectReference Include="..\..\src\BlogApp.Domain\BlogApp.Domain.csproj" />
-    <ProjectReference Include="..\..\src\BlogApp.Infrastructure\BlogApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Application\BaseProject.Application.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Domain\BaseProject.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Infrastructure\BaseProject.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

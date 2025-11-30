@@ -1,9 +1,9 @@
 @echo off
-REM BlogApp Quick Load Test Script
+REM BaseProject Quick Load Test Script
 REM Windows için hızlı test başlatma script'i
 
 echo ========================================
-echo   BlogApp Load Test Başlatılıyor
+echo   BaseProject Load Test Başlatılıyor
 echo ========================================
 echo.
 
@@ -26,7 +26,7 @@ if %ERRORLEVEL% NEQ 0 (
     echo [HATA] API'ye baglanilamiyor!
     echo.
     echo API'yi baslatmak icin:
-    echo   cd src\BlogApp.API
+    echo   cd src\BaseProject.API
     echo   dotnet run --urls http://localhost:6060
     echo.
     echo veya Docker ile:

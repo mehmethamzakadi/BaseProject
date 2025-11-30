@@ -17,14 +17,22 @@ Modern, production-ready React istemcisi. BaseProject REST API ile tam entegre e
 
 2. **Ortam değişkenlerini yapılandırın:**
    
-   `.env.example` dosyasını kopyalayarak `.env` oluşturun:
-   ```bash
-   cp .env.example .env
+   Vite otomatik olarak ortam bazlı `.env` dosyalarını yükler:
+   - `.env.development` - Development ortamı için (npm run dev)
+   - `.env.production` - Production build için (npm run build)
+   
+   Bu dosyalar zaten oluşturulmuştur. Gerekirse API URL'lerini güncelleyin:
+   
+   **Development (.env.development):**
+   ```env
+   VITE_API_URL=http://localhost:6060  # Docker Compose için
+   # veya
+   VITE_API_URL=http://localhost:5285  # Local .NET için
    ```
    
-   Gerekli API adresini güncelleyin:
+   **Production (.env.production):**
    ```env
-   VITE_API_BASE_URL=http://localhost:5000/api
+   VITE_API_URL=https://api.yourdomain.com
    ```
 
 3. **Geliştirme sunucusunu başlatın:**
@@ -37,10 +45,18 @@ Modern, production-ready React istemcisi. BaseProject REST API ile tam entegre e
 ### Production Build
 
 ```bash
+# Production build (production mode)
 npm run build
+# veya
+npm run build:prod
+
+# Development build (development mode - test için)
+npm run build:dev
 ```
 
 Build çıktıları `dist/` klasöründe oluşturulur.
+
+**Not:** Production build için `.env.production` dosyasındaki `VITE_API_URL` değerini production API URL'inize göre güncelleyin.
 
 ## 🛠️ Teknoloji Stack
 
@@ -135,13 +151,26 @@ src/
 
 ### Environment Variables
 
-```env
-# API Configuration
-VITE_API_BASE_URL=http://localhost:5000/api
+Vite otomatik olarak ortam bazlı environment variable dosyalarını yükler:
 
-# Optional
-VITE_ENABLE_DEV_TOOLS=true
+**Development (`.env.development`):**
+```env
+# Docker Compose ile çalışıyorsa
+VITE_API_URL=http://localhost:6060
+
+# Local .NET ile çalışıyorsa
+# VITE_API_URL=http://localhost:5285
 ```
+
+**Production (`.env.production`):**
+```env
+VITE_API_URL=https://api.yourdomain.com
+```
+
+**Not:** 
+- `.env.development` ve `.env.production` dosyaları git'e commit edilmelidir (template olarak)
+- Gerçek production URL'lerini `.env.production` dosyasında güncelleyin
+- `.env` dosyası (varsa) `.gitignore`'da olduğu için commit edilmez
 
 ### API Client
 

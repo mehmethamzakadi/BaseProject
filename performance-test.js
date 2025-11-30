@@ -1,4 +1,4 @@
-// k6 Load Testing Script - BlogApp Performance Test
+// k6 Load Testing Script - BaseProject Performance Test
 // Kullanım: k6 run performance-test.js
 // Detaylı rapor: k6 run --out json=test-results.json performance-test.js
 
@@ -125,7 +125,7 @@ function textSummary(data) {
   
   return `
 ╔════════════════════════════════════════════════════════════════╗
-║           BlogApp Performance Test Results                     ║
+║           BaseProject Performance Test Results                     ║
 ╚════════════════════════════════════════════════════════════════╝
 
 📊 GENEL İSTATİSTİKLER

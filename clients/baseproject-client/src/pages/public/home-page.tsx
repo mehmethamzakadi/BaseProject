@@ -5,7 +5,7 @@ import { getAllCategories } from '../../features/categories/api';
 import { Loader2 } from 'lucide-react';
 
 export function HomePage() {
-  const { data: categories, isLoading: isCategoriesLoading } = useQuery({
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['categories', 'all'],
     queryFn: getAllCategories
   });
@@ -28,7 +28,7 @@ export function HomePage() {
                 Array.from({ length: 6 }).map((_, index) => (
                   <div key={index} className="h-9 w-20 animate-pulse rounded-full bg-muted/60" />
                 ))
-              ) : categories && categories.length > 0 ? (
+              ) : Array.isArray(categories) && categories.length > 0 ? (
                 categories.map((category) => (
                   <Button
                     key={category.id}

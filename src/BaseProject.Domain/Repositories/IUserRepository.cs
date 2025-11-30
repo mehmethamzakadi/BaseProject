@@ -16,4 +16,9 @@ public interface IUserRepository : IRepository<User>
     Task SoftDeleteUserRolesAsync(List<UserRole> userRoles, CancellationToken cancellationToken = default);
     Task RestoreUserRoleAsync(UserRole userRole, CancellationToken cancellationToken = default);
     Task AddUserRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Count total users
+    /// </summary>
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

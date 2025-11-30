@@ -380,7 +380,10 @@ FodyWeavers.xsd
 .env
 .env.local
 .env.*.local
+# Template dosyaları commit edilmeli
 !.env.example
+!.env.development
+!.env.production
 
 # User Secrets
 secrets.json

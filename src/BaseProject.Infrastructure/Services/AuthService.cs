@@ -9,7 +9,7 @@ using BaseProject.Domain.Exceptions;
 using BaseProject.Domain.Repositories;
 using BaseProject.Domain.Services;
 using BaseProject.Infrastructure.Extensions;
-using AppPasswordHasher = BlogApp.Application.Abstractions.Identity.IPasswordHasher;
+using AppPasswordHasher = BaseProject.Application.Abstractions.Identity.IPasswordHasher;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;

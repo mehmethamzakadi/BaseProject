@@ -7,7 +7,7 @@ using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Entities;
 using BaseProject.Domain.Repositories;
 using MediatR;
-using IResult = BlogApp.Domain.Common.Results.IResult;
+using IResult = BaseProject.Domain.Common.Results.IResult;
 
 namespace BaseProject.Application.Features.Categories.Commands.Create;
 

@@ -1,4 +1,4 @@
-# BlogApp - Detaylı Proje Analiz Raporu
+# BaseProject - Detaylı Proje Analiz Raporu
 
 > **Tarih:** 29 Kasım 2025  
 > **Versiyon:** 2.0  
@@ -24,7 +24,7 @@
 
 ### Genel Durum: ⭐⭐⭐⭐ (4/5)
 
-BlogApp projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. Ancak, büyük ölçekli kullanım için bazı kritik iyileştirmeler gerekiyor.
+BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. Ancak, büyük ölçekli kullanım için bazı kritik iyileştirmeler gerekiyor.
 
 ### Güçlü Yönler ✅
 
@@ -76,7 +76,7 @@ BlogApp projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uyg
 
 ### 🔴 KRİTİK-001: EfRepositoryBase.GetAsync - Predicate İki Kez Uygulanıyor
 
-**Dosya:** `src/BlogApp.Persistence/Repositories/EfRepositoryBase.cs:62-65`
+**Dosya:** `src/BaseProject.Persistence/Repositories/EfRepositoryBase.cs:62-65`
 
 **Sorun:**
 ```csharp
@@ -108,7 +108,7 @@ public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, 
 
 ### 🟠 ORTA-001: Event Handler'larda Hardcoded Cache Key'ler
 
-**Dosya:** `src/BlogApp.Application/Features/Posts/EventHandlers/PostUpdatedEventHandler.cs:37-40`
+**Dosya:** `src/BaseProject.Application/Features/Posts/EventHandlers/PostUpdatedEventHandler.cs:37-40`
 
 **Sorun:**
 ```csharp
@@ -145,7 +145,7 @@ await _cacheService.Remove(CacheKeys.PostListVersion());
 
 ### 🟠 ORTA-002: Connection String'de Pooling Parametreleri Eksik
 
-**Dosya:** `src/BlogApp.Persistence/PersistenceServicesRegistration.cs:18-30`
+**Dosya:** `src/BaseProject.Persistence/PersistenceServicesRegistration.cs:18-30`
 
 **Sorun:**
 Connection string'den pooling parametreleri okunmuyor, sadece docker-compose'da tanımlı.
@@ -448,7 +448,7 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 
 ### Genel Değerlendirme
 
-BlogApp projesi **iyi bir mimari temele** sahip. Clean Architecture ve DDD prensiplerine uygun. Ancak, **büyük ölçekli kullanım** için bazı kritik iyileştirmeler gerekiyor.
+BaseProject projesi **iyi bir mimari temele** sahip. Clean Architecture ve DDD prensiplerine uygun. Ancak, **büyük ölçekli kullanım** için bazı kritik iyileştirmeler gerekiyor.
 
 ### Öncelikli Aksiyonlar
 

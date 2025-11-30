@@ -5,7 +5,7 @@ using BaseProject.Domain.Events.PermissionEvents;
 using BaseProject.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using IResult = BlogApp.Domain.Common.Results.IResult;
+using IResult = BaseProject.Domain.Common.Results.IResult;
 
 namespace BaseProject.Application.Features.Permissions.Commands.AssignPermissionsToRole;
 

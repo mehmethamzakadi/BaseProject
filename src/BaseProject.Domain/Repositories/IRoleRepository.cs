@@ -22,4 +22,9 @@ public interface IRoleRepository : IRepository<Role>
     /// Get roles by IDs
     /// </summary>
     Task<List<Role>> GetByIdsAsync(List<Guid> roleIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Count total roles
+    /// </summary>
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,4 @@
-# BlogApp Proje Analiz Raporu
+# BaseProject Proje Analiz Raporu
 
 > **Tarih:** 28 Kasım 2025  
 > **Versiyon:** 1.1  
@@ -18,7 +18,7 @@
 
 ## 1. Yönetici Özeti
 
-BlogApp projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans Sorunları (N+1)** ve **Bağımlılık Sorunları** başarıyla giderilmiştir. Özellikle Domain katmanı artık tamamen saf (pure) hale getirilmiş ve dış kütüphane bağımlılıklarından arındırılmıştır.
+BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans Sorunları (N+1)** ve **Bağımlılık Sorunları** başarıyla giderilmiştir. Özellikle Domain katmanı artık tamamen saf (pure) hale getirilmiş ve dış kütüphane bağımlılıklarından arındırılmıştır.
 
 ---
 
@@ -26,11 +26,11 @@ BlogApp projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans 
 
 ### 2.1 ✅ Domain Katmanı Temizliği (Clean Architecture)
 
-**Durum:** `BlogApp.Domain` projesi `Microsoft.EntityFrameworkCore` ve `System.Linq.Dynamic.Core` gibi infrastructure teknolojilerine bağımlıydı.
+**Durum:** `BaseProject.Domain` projesi `Microsoft.EntityFrameworkCore` ve `System.Linq.Dynamic.Core` gibi infrastructure teknolojilerine bağımlıydı.
 **Yapılan İşlem:**
 - `IIncludableQueryable` (EF Core spesifik) yerine `IQueryable` (Framework bağımsız) yapısına geçildi.
 - Extension metodlar (`ToPaginateAsync`, `ToDynamic`) Domain katmanından `Persistence` katmanına taşındı.
-- `BlogApp.Domain.csproj` dosyasından tüm dış paket referansları silindi.
+- `BaseProject.Domain.csproj` dosyasından tüm dış paket referansları silindi.
 
 ### 2.2 ✅ N+1 Performans Sorunu Çözümü
 
@@ -41,8 +41,8 @@ BlogApp projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans 
 
 **Durum:** Extension metodlar yanlış katmandaydı.
 **Yapılan İşlem:**
-- `IQueryablePaginateExtensions` -> `BlogApp.Persistence.Extensions` altına taşındı.
-- `IQueryableDynamicFilterExtensions` -> `BlogApp.Persistence.Extensions` altına taşındı.
+- `IQueryablePaginateExtensions` -> `BaseProject.Persistence.Extensions` altına taşındı.
+- `IQueryableDynamicFilterExtensions` -> `BaseProject.Persistence.Extensions` altına taşındı.
 
 ---
 

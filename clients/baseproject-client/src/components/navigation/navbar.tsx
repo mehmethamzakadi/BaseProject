@@ -25,7 +25,7 @@ export function Navbar() {
     <header className="border-b bg-background/80 backdrop-blur">
       <div className="container flex items-center justify-between py-4">
         <Link to="/" className="text-xl font-semibold">
-          BlogApp
+          BaseProject
         </Link>
         <nav className="hidden items-center gap-4 md:flex">
           <NavLink to="/" className={navLinkClass} end>

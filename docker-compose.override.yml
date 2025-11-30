@@ -1,5 +1,5 @@
 # ============================================
-# BlogApp - Visual Studio / IDE Override
+# BaseProject - Visual Studio / IDE Override
 # ============================================
 # Bu dosya Visual Studio ile debugging için kullanılır.
 # docker-compose.yml ile birlikte otomatik olarak yüklenir.

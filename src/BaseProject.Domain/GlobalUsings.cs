@@ -1,4 +1,4 @@
-// BlogApp.Domain için global using direktifleri
+// BaseProject.Domain için global using direktifleri
 
 global using System;
 global using System.Collections.Generic;

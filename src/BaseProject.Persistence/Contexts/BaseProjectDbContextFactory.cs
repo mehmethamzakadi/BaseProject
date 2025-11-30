@@ -15,7 +15,7 @@ public class BaseProjectDbContextFactory : IDesignTimeDbContextFactory<BaseProje
 
         // PostgreSQL connection string for migrations
         optionsBuilder.UseNpgsql(
-            "Host=localhost;Database=BlogAppDb;Username=postgres;Password=postgres",
+            "Host=localhost;Database=BaseProjectDb;Username=postgres;Password=postgres",
             b => b.MigrationsHistoryTable("__EFMigrationsHistory", "public")
         );
 
