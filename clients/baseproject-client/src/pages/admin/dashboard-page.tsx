@@ -18,15 +18,20 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
 
+  // ✅ Dashboard istatistikleri - sık değişen veri için staleTime override
+  // Global staleTime (5 dakika) yerine 30 saniye kullanıyoruz
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-statistics'],
     queryFn: fetchStatistics,
+    staleTime: 30 * 1000, // 30 saniye (global 5 dakika yerine override)
     refetchInterval: 30000 // Her 30 saniyede bir güncelle
   });
 
+  // ✅ Son aktiviteler - sık değişen veri için staleTime override
   const { data: recentActivities = [], isLoading: isLoadingActivities } = useQuery({
     queryKey: ['recent-activities'],
     queryFn: () => fetchRecentActivities(10),
+    staleTime: 30 * 1000, // 30 saniye (global 5 dakika yerine override)
     refetchInterval: 30000 // Her 30 saniyede bir güncelle
   });
 

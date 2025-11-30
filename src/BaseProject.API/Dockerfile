@@ -12,6 +12,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+# ✅ Merkezi paket versiyon yönetimi için gerekli dosyalar
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Packages.props", "./"]
+# Proje dosyalarını kopyala
 COPY ["src/BaseProject.API/BaseProject.API.csproj", "src/BaseProject.API/"]
 COPY ["src/BaseProject.Infrastructure/BaseProject.Infrastructure.csproj", "src/BaseProject.Infrastructure/"]
 COPY ["src/BaseProject.Application/BaseProject.Application.csproj", "src/BaseProject.Application/"]

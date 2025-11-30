@@ -1,8 +1,8 @@
 # BaseProject Proje Analiz Raporu
 
 > **Tarih:** 30 Kasım 2025  
-> **Versiyon:** 1.3  
-> **Durum:** Dashboard AI Insights Özelliği ve Docker Compose Düzeltmeleri Tamamlandı
+> **Versiyon:** 1.4  
+> **Durum:** OpenTelemetry/Jaeger Entegrasyonu ve Serilog/Seq İyileştirmeleri Tamamlandı
 
 ---
 
@@ -23,6 +23,8 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 **Yeni Özellikler:**
 - **Yapay Zeka Destekli İçerik Üretme**: Ollama (Qwen 2.5:7b) kullanılarak kategori açıklamaları otomatik olarak üretilebilmektedir.
 - **Dashboard AI İçgörüleri**: Sistem istatistiklerini ve aktivite loglarını analiz ederek trendler, uyarılar ve öneriler üreten AI destekli özellik. Permission bazlı erişim kontrolü ile sadece yetkili kullanıcılar kullanabilir.
+- **OpenTelemetry ve Jaeger Entegrasyonu**: Dağıtık sistem takibi için OpenTelemetry altyapısı kuruldu ve Jaeger ile trace görselleştirme eklendi. HTTP Request, EF Core sorguları ve MassTransit (RabbitMQ) mesajları otomatik olarak trace edilmektedir.
+- **Serilog ve Seq İyileştirmeleri**: Docker ve Local ortam desteği eklendi, log seviyesi optimizasyonu yapıldı (Development: Information, Production: Warning).
 
 ---
 
@@ -88,6 +90,34 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 - Healthcheck'ler iyileştirildi
 - PermissionSeeder ID çakışması önleme mekanizması eklendi
 
+### 2.7 ✅ OpenTelemetry ve Jaeger Entegrasyonu
+
+**Durum:** OpenTelemetry altyapısı kurulmuştu ancak trace'leri görselleştirebilecek bir arayüz yoktu.
+**Yapılan İşlem:**
+- Jaeger servisi docker-compose.local.yml'e eklendi (jaegertracing/all-in-one:latest)
+- Portlar: 16686 (UI), 4317 (OTLP gRPC), 4318 (OTLP HTTP)
+- OpenTelemetryConfiguration.cs'e OTLP exporter eklendi
+- Environment variable desteği eklendi (OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL)
+- Docker ve Local ortam desteği (Docker: http://jaeger:4317, Local: http://localhost:4317)
+- Tracing, Metrics ve Logs için OTLP exporter entegrasyonu
+- OpenTelemetry.Exporter.OpenTelemetryProtocol paketi eklendi
+
+### 2.8 ✅ Serilog ve Seq İyileştirmeleri
+
+**Durum:** Seq arayüzüne erişilebiliyordu ancak log kayıtları görünmüyordu. Docker ve Local ortam ayrımı yapılmamıştı.
+**Yapılan İşlem:**
+- SerilogConfiguration.cs'de Docker ve Local ortam ayrımı yapıldı
+- Environment variable desteği eklendi (Serilog__SeqUrl, Serilog__SeqApiKey)
+- Docker ortamında: http://seq:80, Local ortamda: http://localhost:5341
+- Seq sink koşullu eklendi (Seq URL null ise eklenmiyor)
+- Log seviyesi optimizasyonu:
+  - Veritabanı: Development (Information), Production (Warning)
+  - Seq: Debug (tüm detaylar)
+  - Console: Debug (tüm detaylar)
+  - File: Debug (tüm detaylar)
+- appsettings.json'a Serilog konfigürasyon bloğu eklendi
+- docker-compose.local.yml'de Seq URL environment variable düzeltildi
+
 ---
 
 ## 3. Mevcut Durum
@@ -126,6 +156,8 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 | ARCH-003 | Extension Metod Taşıma | 28.11.2025 | ✅ Tamamlandı (Persistence'a taşındı) |
 | FEAT-001 | Ollama AI Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Best practices ile) |
 | ARCH-004 | Models Klasör Yapısı | 30.11.2025 | ✅ Tamamlandı (Separation of Concerns) |
+| FEAT-002 | OpenTelemetry/Jaeger Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Trace görselleştirme) |
+| FEAT-003 | Serilog/Seq İyileştirmeleri | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği) |
 
 > **Son Güncelleme:** 30 Kasım 2025
-> **Versiyon:** 1.2
+> **Versiyon:** 1.4

@@ -100,6 +100,9 @@ namespace BaseProject.Infrastructure
                         hostConfigurator.Password(rabbitOptions.Password);
                     });
 
+                    // ✅ OpenTelemetry tracing desteği - Trace ID'yi mesajlara ekle
+                    cfg.ConfigureEndpoints(context);
+
                     // Activity Log queue with retry and error handling
                     cfg.ReceiveEndpoint(EventConstants.ActivityLogQueue, endpointConfigurator =>
                     {

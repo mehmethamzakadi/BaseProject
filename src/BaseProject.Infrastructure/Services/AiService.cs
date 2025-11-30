@@ -68,6 +68,18 @@ public sealed class AiService : IAiService
                     response.StatusCode,
                     errorContent);
                 
+                // ✅ Model bulunamadı hatası için kullanıcı dostu mesaj
+                if (response.StatusCode == HttpStatusCode.NotFound && errorContent.Contains("not found"))
+                {
+                    var friendlyMessage = $"Ollama modeli '{options.ModelId}' bulunamadı. " +
+                        $"Lütfen modeli yükleyin: docker exec baseproject_ollama_dev ollama pull {options.ModelId}";
+                    
+                    throw new HttpRequestException(
+                        friendlyMessage,
+                        null,
+                        response.StatusCode);
+                }
+                
                 throw new HttpRequestException(
                     $"Ollama API hatası: {response.StatusCode}. {errorContent}",
                     null,

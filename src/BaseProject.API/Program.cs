@@ -11,6 +11,7 @@ using BaseProject.Persistence.DatabaseInitializer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -35,6 +36,9 @@ if (allowedOrigins.Length == 0)
 {
     throw new InvalidOperationException("En az bir izinli CORS origin yapılandırılmalıdır (Cors:AllowedOrigins).");
 }
+
+// OpenTelemetry yapılandırması - Tracing ve Metrics için
+builder.Services.AddOpenTelemetryServices(builder.Configuration, builder.Environment);
 
 builder.Services.AddConfigurePersistenceServices(builder.Configuration);
 builder.Services.AddConfigureApplicationServices(builder.Configuration);
@@ -187,7 +191,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Serilog request logging ekle
+// Serilog request logging ekle - Trace ID ile zenginleştirilmiş
 app.UseSerilogRequestLogging(options =>
 {
     options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
@@ -197,6 +201,15 @@ app.UseSerilogRequestLogging(options =>
         diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
         diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].ToString());
+
+        // ✅ OpenTelemetry Trace ID'yi loglara ekle
+        var activity = System.Diagnostics.Activity.Current;
+        if (activity != null)
+        {
+            diagnosticContext.Set("TraceId", activity.TraceId.ToString());
+            diagnosticContext.Set("SpanId", activity.SpanId.ToString());
+            diagnosticContext.Set("ParentSpanId", activity.ParentSpanId.ToString());
+        }
 
         if (httpContext.User?.Identity?.IsAuthenticated == true)
         {

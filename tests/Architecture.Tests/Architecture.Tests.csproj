@@ -1,11 +1,9 @@
-
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -17,20 +15,24 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="NUnit.Analyzers">
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NUnit3TestAdapter" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\BaseProject.API\BaseProject.API.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Application\BaseProject.Application.csproj" />
     <ProjectReference Include="..\..\src\BaseProject.Domain\BaseProject.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Infrastructure\BaseProject.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BaseProject.Persistence\BaseProject.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="NUnit.Framework" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>

@@ -11,7 +11,16 @@ public static class SerilogConfiguration
     {
         var connectionString = builder.Configuration.GetConnectionString("BaseProjectPostgreConnectionString") 
             ?? throw new InvalidOperationException("Connection string 'BaseProjectPostgreConnectionString' not found.");
-        var seqUrl = builder.Configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
+        
+        // Seq URL yapılandırması - Docker ve Local ortam desteği
+        // Öncelik sırası: Environment Variable > appsettings.json > Default
+        var seqUrl = Environment.GetEnvironmentVariable("Serilog__SeqUrl")
+            ?? builder.Configuration["Serilog:SeqUrl"]
+            ?? (builder.Environment.IsDevelopment() ? "http://localhost:5341" : null);
+        
+        var seqApiKey = Environment.GetEnvironmentVariable("Serilog__SeqApiKey")
+            ?? builder.Configuration["Serilog:SeqApiKey"];
+        
         var environment = builder.Environment.EnvironmentName;
 
         // PostgreSQL için tablo yapılandırması
@@ -27,7 +36,7 @@ public static class SerilogConfiguration
             { "machine_name", new SinglePropertyColumnWriter("MachineName", PropertyWriteMethod.Raw) }
         };
 
-        Log.Logger = new LoggerConfiguration()
+        var loggerConfiguration = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
@@ -55,22 +64,28 @@ public static class SerilogConfiguration
             )
 
             // PostgreSQL sink - Structured logging için
+            // ⚠️ Production'da sadece Warning ve üzeri loglar veritabanına kaydedilmeli (performans için)
+            // Development'ta Information seviyesi kabul edilebilir
             .WriteTo.PostgreSQL(
                 connectionString: connectionString,
                 tableName: "Logs",
                 columnOptions: columnWriters,
                 needAutoCreateTable: true,
-                restrictedToMinimumLevel: LogEventLevel.Information
-            )
+                restrictedToMinimumLevel: environment == "Development" ? LogEventLevel.Information : LogEventLevel.Warning
+            );
 
-            // Seq sink - Development/Production log analizi için
-            .WriteTo.Seq(
+        // Seq sink - Development/Production log analizi için
+        // Seq URL null ise Seq sink'i ekleme (opsiyonel)
+        if (!string.IsNullOrWhiteSpace(seqUrl))
+        {
+            loggerConfiguration = loggerConfiguration.WriteTo.Seq(
                 serverUrl: seqUrl,
                 restrictedToMinimumLevel: LogEventLevel.Debug,
-                apiKey: builder.Configuration["Serilog:SeqApiKey"]
-            )
+                apiKey: string.IsNullOrWhiteSpace(seqApiKey) ? null : seqApiKey
+            );
+        }
 
-            .CreateLogger();
+        Log.Logger = loggerConfiguration.CreateLogger();
 
         builder.Host.UseSerilog();
     }

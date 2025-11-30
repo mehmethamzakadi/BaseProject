@@ -20,8 +20,10 @@ namespace BaseProject.Persistence.Configurations
                 .IsRowVersion()
                 .HasColumnName("RowVersion");
             
-            // Soft delete filter
-            builder.HasQueryFilter(x => !x.IsDeleted);
+            // ✅ Soft delete filter - BaseProjectDbContext'te reflection ile otomatik uygulanıyor
+            // Burada tekrar uygulamaya gerek yok, çünkü BaseProjectDbContext.OnModelCreating'de
+            // tüm ISoftDeletable entity'lere otomatik olarak filter uygulanıyor
+            // builder.HasQueryFilter(x => !x.IsDeleted); // Yorum satırına alındı - BaseProjectDbContext'te zaten var
         }
     }
 }
