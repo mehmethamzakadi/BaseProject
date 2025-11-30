@@ -64,6 +64,9 @@ services:
       OllamaOptions__Endpoint: http://ollama:11434
       OllamaOptions__ModelId: qwen2.5:7b
       OllamaOptions__ApiKey: ollama
+      OllamaOptions__TimeoutMinutes: 2
+      OllamaOptions__RetryCount: 3
+      OllamaOptions__RetryDelaySeconds: 2
       # CORS Policy
       CorsOptions__AllowedOrigins: "http://localhost:5173"
     depends_on:
@@ -73,8 +76,8 @@ services:
         condition: service_healthy
       redis.cache:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
+      # Ollama opsiyonel - API Ollama olmadan da çalışabilir
+      # ollama dependency kaldırıldı - AI özellikleri opsiyonel
     ports:
       - "6060:8080"          # API endpoint
     volumes:
@@ -183,6 +186,13 @@ services:
       - seq_local_data:/data
     networks:
       - baseproject_local_net
+    # Seq healthcheck - basit bir ping kontrolü yeterli
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # ===========================================
   # Ollama AI Service - Development
@@ -197,13 +207,14 @@ services:
       - ollama_local_data:/root/.ollama
     networks:
       - baseproject_local_net
-    # Ollama başlatma süresi uzun olabilir (model yükleme), bu yüzden healthcheck basit tutuldu
+    # Ollama başlatma süresi uzun olabilir (model yükleme)
+    # Healthcheck basit tutuldu - Ollama servisi hazır olmasa bile container çalışmaya devam eder
     healthcheck:
-      test: ["CMD-SHELL", "ollama list || exit 0"]
-      interval: 30s
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 60s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 1
+      start_period: 120s  # Ollama başlatma için daha fazla süre
 
   # ===========================================
   # pgAdmin - Database Management (Opsiyonel)

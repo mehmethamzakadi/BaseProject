@@ -1,7 +1,7 @@
 # BaseProject - Detaylı Proje Analiz Raporu
 
 > **Tarih:** 30 Kasım 2025  
-> **Versiyon:** 2.1  
+> **Versiyon:** 2.2  
 > **Analiz Tipi:** Kapsamlı Kod Kalitesi ve Performans İncelemesi
 
 ---
@@ -24,7 +24,7 @@
 
 ### Genel Durum: ⭐⭐⭐⭐⭐ (5/5)
 
-BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. **Yapay Zeka Destekli İçerik Üretme** özelliği best practices ile eklenmiş ve proje artık daha olgun bir seviyeye ulaşmıştır.
+BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. **Yapay Zeka Destekli Özellikler** (kategori açıklaması üretme ve Dashboard AI içgörüleri) best practices ile eklenmiş ve proje artık daha olgun bir seviyeye ulaşmıştır.
 
 ### Güçlü Yönler ✅
 
@@ -38,14 +38,17 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 - ✅ Connection pooling yapılandırılmış
 - ✅ Rate limiting implementasyonu var
 - ✅ Exception handling middleware mevcut
-- ✅ **Yapay Zeka Entegrasyonu** - Ollama (Qwen 2.5:7b) ile AI destekli içerik üretme
+- ✅ **Yapay Zeka Entegrasyonu** - Ollama (Qwen 2.5:7b) ile AI destekli özellikler
+  - Kategori açıklaması üretme
+  - Dashboard AI içgörüleri ve öneriler (permission bazlı)
 - ✅ **Best Practices** - IHttpClientFactory, Polly retry policy, structured logging
 - ✅ **Separation of Concerns** - Models klasör yapısı ile temiz kod organizasyonu
+- ✅ **Permission-Based AI Access** - AI özellikleri permission kontrolü ile korunuyor
 
 ### Zayıf Yönler ⚠️
 
-- ⚠️ Repository base class'ında predicate iki kez uygulanıyor (performans sorunu)
-- ⚠️ Event handler'larda hardcoded cache key'ler var
+- ⚠️ Repository base class'ında predicate iki kez uygulanıyor (performans sorunu) - ✅ DÜZELTİLDİ
+- ⚠️ Event handler'larda hardcoded cache key'ler var - ✅ Kısmen düzeltildi
 - ⚠️ Bazı yerlerde gereksiz `.ToList()` kullanımları
 - ⚠️ Connection string'de pooling parametreleri eksik (bazı ortamlarda)
 - ⚠️ Frontend'de bazı optimizasyonlar eksik
@@ -408,6 +411,8 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 1. ✅ **EfRepositoryBase.GetAsync Düzeltmesi** (KRİTİK-001) - **TAMAMLANDI**
 2. **Connection Pool Monitoring Ekleme** (KRİTİK-002)
 3. ✅ **Event Handler Cache Key Refactoring** (ORTA-001) - **TAMAMLANDI** (Post event handler'ları)
+4. ✅ **PermissionSeeder Duplicate Key Sorunu** - **TAMAMLANDI** (NormalizedName bazlı kontrol eklendi)
+5. ✅ **Docker Compose Environment Variables** - **TAMAMLANDI** (OllamaOptions, Redis connection string)
 
 ### 8.2 Kısa Vadeli (1 Ay İçinde)
 
@@ -435,17 +440,19 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 
 ## 9. Öncelik Matrisi
 
-| ID | Sorun | Öncelik | Etki | Çaba | Süre |
-|----|-------|---------|------|------|------|
-| KRİTİK-001 | EfRepositoryBase.GetAsync predicate | 🔴 Yüksek | Yüksek | Düşük | 30 dk |
-| KRİTİK-002 | Connection pool monitoring | 🔴 Yüksek | Yüksek | Orta | 2 saat |
-| ORTA-001 | Event handler cache keys | 🟠 Orta | Orta | Orta | 2 saat |
-| ORTA-002 | Connection string pooling | 🟠 Orta | Orta | Düşük | 1 saat |
-| ORTA-003 | Cache stampede prevention | 🟠 Orta | Orta | Yüksek | 1 gün |
-| ORTA-004 | N+1 query optimization | 🟠 Orta | Orta | Orta | 4 saat |
-| MINOR-001 | Magic numbers | 🟡 Düşük | Düşük | Düşük | 2 saat |
-| MINOR-002 | String interpolation | 🟡 Düşük | Düşük | - | - |
-| MINOR-003 | Pagination performance | 🟡 Düşük | Düşük | Yüksek | 2 gün |
+| ID | Sorun | Öncelik | Etki | Çaba | Süre | Durum |
+|----|-------|---------|------|------|------|-------|
+| KRİTİK-001 | EfRepositoryBase.GetAsync predicate | 🔴 Yüksek | Yüksek | Düşük | 30 dk | ✅ TAMAMLANDI |
+| KRİTİK-002 | Connection pool monitoring | 🔴 Yüksek | Yüksek | Orta | 2 saat | ⏳ Beklemede |
+| ORTA-001 | Event handler cache keys | 🟠 Orta | Orta | Orta | 2 saat | ✅ TAMAMLANDI |
+| ORTA-002 | Connection string pooling | 🟠 Orta | Orta | Düşük | 1 saat | ⏳ Beklemede |
+| ORTA-003 | Cache stampede prevention | 🟠 Orta | Orta | Yüksek | 1 gün | ⏳ Beklemede |
+| ORTA-004 | N+1 query optimization | 🟠 Orta | Orta | Orta | 4 saat | ⏳ Beklemede |
+| FIX-001 | PermissionSeeder duplicate key | 🔴 Yüksek | Yüksek | Düşük | 1 saat | ✅ TAMAMLANDI |
+| FIX-002 | Docker Compose env variables | 🟠 Orta | Orta | Düşük | 30 dk | ✅ TAMAMLANDI |
+| MINOR-001 | Magic numbers | 🟡 Düşük | Düşük | Düşük | 2 saat | ⏳ Beklemede |
+| MINOR-002 | String interpolation | 🟡 Düşük | Düşük | - | - | ⏳ Beklemede |
+| MINOR-003 | Pagination performance | 🟡 Düşük | Düşük | Yüksek | 2 gün | ⏳ Beklemede |
 
 ---
 
@@ -479,7 +486,7 @@ Proje genel olarak **profesyonel seviyede** ve **best practice'lere uygun**. Tes
 
 ---
 
-## 11. Yeni Özellikler (v2.1)
+## 11. Yeni Özellikler (v2.2)
 
 ### 11.1 ✅ Yapay Zeka Destekli İçerik Üretme
 
@@ -533,6 +540,80 @@ src/BaseProject.Infrastructure/
 
 ---
 
+### 11.2 ✅ Dashboard AI İçgörüleri ve Öneriler
+
+**Özellik:** Dashboard için AI destekli içgörüler, trendler, uyarılar ve öneriler üretme.
+
+**Implementasyon Detayları:**
+
+#### Backend
+- **Domain Layer:** `IAiService` interface'ine `GenerateDashboardInsightsAsync` metodu eklendi
+  - `DashboardStatistics` modeli
+  - `DashboardInsights` response modeli
+  - `InsightTrend`, `InsightAlert`, `InsightRecommendation` modelleri
+- **Application Layer:** 
+  - `GetAiInsightsQuery` ve `GetAiInsightsQueryHandler` eklendi
+  - `GetAiInsightsResponse` response modelleri
+- **API Endpoint:** `GET /api/dashboards/ai-insights`
+  - `[HasPermission(Permissions.DashboardAIInsights)]` attribute ile korumalı
+- **AI Service:**
+  - JSON formatında structured response parsing
+  - Aktivite loglarını analiz ederek trend tespiti
+  - Graceful degradation (hata durumunda boş içgörüler döndürür)
+
+#### Frontend
+- AI Insights Card component eklendi (`components/dashboard/ai-insights-card.tsx`)
+- Permission kontrolü ile görünürlük yönetimi
+- Manuel "İçgörüleri Yükle" butonu (maliyet kontrolü için otomatik güncelleme yok)
+- Loading ve empty state desteği
+- Trend, Alert ve Recommendation görüntüleme
+
+#### Permission
+- `Dashboard.AIInsights` permission'ı eklendi
+- Sadece yetkili kullanıcılar (admin) görüntüleyebilir
+- PermissionSeeder'a eklendi
+
+**Best Practices:**
+- ✅ Permission bazlı erişim kontrolü
+- ✅ Manuel tetikleme (maliyet kontrolü)
+- ✅ JSON parsing ile structured response
+- ✅ Graceful error handling
+- ✅ Frontend permission guard ile UI kontrolü
+
+---
+
+### 11.3 ✅ Docker Compose ve PermissionSeeder Düzeltmeleri
+
+**Sorunlar:**
+1. Docker Compose'da OllamaOptions için eksik environment variables
+2. Redis connection string'inde service adı uyumsuzluğu
+3. PermissionSeeder'da duplicate key hatası (NormalizedName unique constraint)
+
+**Yapılan Düzeltmeler:**
+
+#### Docker Compose İyileştirmeleri
+- OllamaOptions environment variables eklendi:
+  - `OllamaOptions__TimeoutMinutes: 2`
+  - `OllamaOptions__RetryCount: 3`
+  - `OllamaOptions__RetryDelaySeconds: 2`
+- Redis connection string düzeltildi: `redis_server` → `redis.cache`
+- Ollama dependency opsiyonel hale getirildi (API Ollama olmadan da çalışabilir)
+- Healthcheck'ler basitleştirildi ve iyileştirildi
+
+#### PermissionSeeder Düzeltmeleri
+- NormalizedName bazlı kontrol eklendi (duplicate key sorunu çözüldü)
+- ID çakışması önleme mekanizması eklendi
+- Mevcut permission sayısına göre index başlatma
+- Idempotent seed işlemi (birden fazla kez çalıştırılabilir)
+
+**Dosya Yapısı:**
+```
+src/BaseProject.Persistence/DatabaseInitializer/Seeders/
+└── PermissionSeeder.cs (güncellendi - NormalizedName bazlı kontrol)
+```
+
+---
+
 **Rapor Hazırlayan:** AI Code Reviewer  
 **Tarih:** 30 Kasım 2025  
-**Versiyon:** 2.1
+**Versiyon:** 2.2

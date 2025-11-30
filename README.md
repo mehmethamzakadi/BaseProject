@@ -38,7 +38,9 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 - 📊 **Activity Logging** - Detaylı aktivite takibi
 - 🔒 **Rate Limiting** - DDoS koruması
 - 📝 **Serilog** - Yapılandırılmış loglama (Console, File, PostgreSQL, Seq)
-- 🤖 **AI-Powered Content Generation** - Ollama (Qwen 2.5:7b) ile yapay zeka destekli içerik üretme
+- 🤖 **AI-Powered Features** - Ollama (Qwen 2.5:7b) ile yapay zeka destekli özellikler
+  - AI ile kategori açıklaması üretme
+  - Dashboard AI içgörüleri ve öneriler (permission bazlı)
 - 🔄 **Resilience Patterns** - Polly retry policy ile dayanıklı HTTP istekleri
 
 ### Frontend
@@ -119,7 +121,8 @@ BaseProject/
 │   │   │   ├── Categories/
 │   │   │   ├── Users/
 │   │   │   ├── Roles/
-│   │   │   └── Auths/
+│   │   │   ├── Auths/
+│   │   │   └── Dashboards/
 │   │   ├── Behaviors/
 │   │   └── Abstractions/
 │   ├── BaseProject.Domain/              # Core Domain
@@ -177,13 +180,16 @@ git clone https://github.com/mehmethamzakadi/BaseProject.git
 cd BaseProject
 
 # Tüm servisleri başlat
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
-# Ollama modelini yükle (ilk kez)
+# Veya sadece local dosyası ile
+docker compose -f docker-compose.local.yml up --build -d
+
+# Ollama modelini yükle (ilk kez - AI özellikleri için opsiyonel)
 docker exec -it baseproject_ollama_dev ollama pull qwen2.5:7b
 
 # Logları izle
-docker-compose -f docker-compose.local.yml logs -f baseproject.api
+docker compose -f docker-compose.local.yml logs -f baseproject.api
 ```
 
 ### Manuel Kurulum
@@ -302,6 +308,7 @@ http://localhost:5000/scalar/v1
 | `/api/user` | GET | Kullanıcı listesi | ✅ |
 | `/api/role` | GET | Rol listesi | ✅ |
 | `/api/Dashboards/statistics` | GET | Dashboard istatistikleri | ✅ |
+| `/api/Dashboards/ai-insights` | GET | Dashboard AI içgörüleri | ✅ (Dashboard.AIInsights) |
 | `/api/ActivityLogs/search` | POST | Aktivite logları | ✅ |
 
 ### Örnek İstekler
@@ -329,6 +336,14 @@ curl -X POST http://localhost:5000/api/Category \
 curl -X GET "http://localhost:5000/api/category/generate-description?categoryName=Teknoloji" \
   -H "Authorization: Bearer {token}"
 ```
+
+#### Dashboard AI İçgörüleri
+```bash
+curl -X GET "http://localhost:5000/api/dashboards/ai-insights" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Not:** Bu endpoint sadece `Dashboard.AIInsights` permission'ı olan kullanıcılar tarafından kullanılabilir.
 
 ---
 
@@ -404,9 +419,9 @@ http://localhost:15672
 
 Kullanıcı/Şifre: `baseproject/supersecret`
 
-### Ollama AI Service
+### Ollama AI Service (Opsiyonel)
 
-Ollama servisi Docker container'ında çalışmaktadır. Model yükleme ve yönetimi için:
+Ollama servisi Docker container'ında çalışmaktadır ve AI özellikleri için kullanılır. **Önemli:** API Ollama olmadan da çalışabilir, AI özellikleri opsiyoneldir. Model yükleme ve yönetimi için:
 
 ```bash
 # Model listesi
@@ -440,6 +455,7 @@ docker run -d -p 8081:8081 --name redis-commander \
 - **SQL Injection:** Parametreli sorgular (EF Core)
 - **XSS Protection:** Input validation ve sanitization
 - **AI Service Security:** Timeout ve retry mekanizmaları ile güvenli API çağrıları
+- **Permission-Based AI Features:** AI özellikleri permission kontrolü ile korunuyor
 
 ---
 

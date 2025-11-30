@@ -181,6 +181,7 @@ namespace BaseProject.Persistence.Migrations.PostgreSql
                     AccessFailedCount = table.Column<int>(type: "integer", nullable: false),
                     PasswordResetToken = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     PasswordResetTokenExpiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ProfilePictureUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedById = table.Column<Guid>(type: "uuid", nullable: true),

@@ -1,14 +1,23 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import { FolderKanban, Users, Shield, Activity as ActivityIcon } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { FolderKanban, Users, Shield, Activity as ActivityIcon, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { StatCard } from '../../components/dashboard/stat-card';
 import { ActivityFeed, Activity } from '../../components/dashboard/activity-feed';
-import { fetchStatistics, fetchRecentActivities } from '../../features/dashboard/api';
+import { AiInsightsCard } from '../../components/dashboard/ai-insights-card';
+import { fetchStatistics, fetchRecentActivities, fetchAiInsights } from '../../features/dashboard/api';
+import { usePermission } from '../../hooks/use-permission';
+import { Permissions } from '../../lib/permissions';
+import { useState } from 'react';
 
 export function DashboardPage() {
+  const { hasPermission } = usePermission();
+  const canViewAIInsights = hasPermission(Permissions.DashboardAIInsights);
+  const queryClient = useQueryClient();
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-statistics'],
     queryFn: fetchStatistics,
@@ -20,6 +29,29 @@ export function DashboardPage() {
     queryFn: () => fetchRecentActivities(10),
     refetchInterval: 30000 // Her 30 saniyede bir güncelle
   });
+
+  // AI Insights - sadece enabled olduğunda query çalışacak, manuel tetikleme için
+  const { data: aiInsights, isLoading: isLoadingInsightsQuery } = useQuery({
+    queryKey: ['dashboard-ai-insights'],
+    queryFn: fetchAiInsights,
+    enabled: false, // Otomatik çalışmasın, manuel buton ile tetiklenecek
+  });
+
+  const handleLoadAIInsights = async () => {
+    setIsLoadingInsights(true);
+    try {
+      await queryClient.fetchQuery({
+        queryKey: ['dashboard-ai-insights'],
+        queryFn: fetchAiInsights,
+      });
+    } catch (error) {
+      console.error('AI insights yüklenirken hata:', error);
+    } finally {
+      setIsLoadingInsights(false);
+    }
+  };
+
+  const isLoadingAIInsights = isLoadingInsights || isLoadingInsightsQuery;
 
   // API verisini bileşen formatına dönüştür
   const activities: Activity[] = recentActivities.map(activity => ({
@@ -95,6 +127,68 @@ export function DashboardPage() {
           delay={0.3}
         />
       </div>
+
+      {/* AI İçgörüleri Butonu */}
+      {canViewAIInsights && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI İçgörüleri
+            </CardTitle>
+            <CardDescription>
+              Yapay zeka destekli sistem analizi ve öneriler
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!aiInsights && !isLoadingAIInsights && (
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">AI içgörüleri henüz yüklenmedi</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sistem verilerinizi analiz edip trendler, uyarılar ve öneriler üretmek için butona tıklayın.
+                  </p>
+                </div>
+                <Button onClick={handleLoadAIInsights} className="ml-4">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  İçgörüleri Yükle
+                </Button>
+              </div>
+            )}
+            {(aiInsights || isLoadingAIInsights) && (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleLoadAIInsights} 
+                    disabled={isLoadingAIInsights}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isLoadingAIInsights ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Yükleniyor...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Yenile
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <AiInsightsCard
+                  trends={aiInsights?.trends ?? []}
+                  alerts={aiInsights?.alerts ?? []}
+                  recommendations={aiInsights?.recommendations ?? []}
+                  isLoading={isLoadingAIInsights}
+                  delay={0.4}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Hızlı Aksiyonlar ve Aktiviteler */}
       <div className="grid gap-6 lg:grid-cols-3">

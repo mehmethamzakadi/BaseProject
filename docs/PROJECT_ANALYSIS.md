@@ -1,8 +1,8 @@
 # BaseProject Proje Analiz Raporu
 
 > **Tarih:** 30 Kasım 2025  
-> **Versiyon:** 1.2  
-> **Durum:** Yapay Zeka Entegrasyonu ve Best Practices İyileştirmeleri Tamamlandı
+> **Versiyon:** 1.3  
+> **Durum:** Dashboard AI Insights Özelliği ve Docker Compose Düzeltmeleri Tamamlandı
 
 ---
 
@@ -20,7 +20,9 @@
 
 BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans Sorunları (N+1)** ve **Bağımlılık Sorunları** başarıyla giderilmiştir. Özellikle Domain katmanı artık tamamen saf (pure) hale getirilmiş ve dış kütüphane bağımlılıklarından arındırılmıştır.
 
-**Yeni Özellik:** Projeye **Yapay Zeka Destekli İçerik Üretme** özelliği eklenmiştir. Ollama (Qwen 2.5:7b) kullanılarak kategori açıklamaları otomatik olarak üretilebilmektedir. Bu özellik best practices'e uygun şekilde implement edilmiştir (IHttpClientFactory, Polly retry policy, structured logging).
+**Yeni Özellikler:**
+- **Yapay Zeka Destekli İçerik Üretme**: Ollama (Qwen 2.5:7b) kullanılarak kategori açıklamaları otomatik olarak üretilebilmektedir.
+- **Dashboard AI İçgörüleri**: Sistem istatistiklerini ve aktivite loglarını analiz ederek trendler, uyarılar ve öneriler üreten AI destekli özellik. Permission bazlı erişim kontrolü ile sadece yetkili kullanıcılar kullanabilir.
 
 ---
 
@@ -62,6 +64,29 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 - Frontend'e "Yapay Zeka ile Üret ✨" butonu eklendi
 - Docker Compose'a Ollama servisi eklendi
 - Models klasör yapısı oluşturuldu (Separation of Concerns)
+
+### 2.5 ✅ Dashboard AI İçgörüleri Özelliği
+
+**Durum:** Dashboard'da sadece temel istatistikler görüntüleniyordu.
+**Yapılan İşlem:**
+- Dashboard için AI destekli içgörüler, trendler ve öneriler özelliği eklendi
+- `Dashboard.AIInsights` permission'ı eklendi (sadece yetkili kullanıcılar erişebilir)
+- Manuel buton ile tetikleme (otomatik güncelleme yok, maliyet kontrolü için)
+- Frontend'de AI Insights Card component'i eklendi
+- Permission bazlı erişim kontrolü (sadece admin/yetkili kullanıcılar görebilir)
+- JSON parsing ile structured AI response handling
+- Graceful degradation (AI servisi down olduğunda uygulama çalışmaya devam eder)
+
+### 2.6 ✅ Docker Compose ve PermissionSeeder İyileştirmeleri
+
+**Durum:** Docker Compose'da eksik environment variables ve PermissionSeeder'da duplicate key sorunu vardı.
+**Yapılan İşlem:**
+- OllamaOptions için eksik environment variables eklendi (TimeoutMinutes, RetryCount, RetryDelaySeconds)
+- Redis connection string düzeltildi (service adı uyumsuzluğu)
+- Ollama dependency opsiyonel hale getirildi (API Ollama olmadan da çalışabilir)
+- PermissionSeeder duplicate key sorunu çözüldü (NormalizedName bazlı kontrol)
+- Healthcheck'ler iyileştirildi
+- PermissionSeeder ID çakışması önleme mekanizması eklendi
 
 ---
 

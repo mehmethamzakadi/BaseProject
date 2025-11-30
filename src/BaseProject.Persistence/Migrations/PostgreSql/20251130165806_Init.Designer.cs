@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BaseProject.Persistence.Migrations.PostgreSql
 {
     [DbContext(typeof(BaseProjectDbContext))]
-    [Migration("20251130132536_Init")]
+    [Migration("20251130165806_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -564,6 +564,10 @@ namespace BaseProject.Persistence.Migrations.PostgreSql
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()

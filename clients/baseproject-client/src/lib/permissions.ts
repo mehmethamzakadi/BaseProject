@@ -5,6 +5,7 @@
 export const Permissions = {
   // Dashboard
   DashboardView: 'Dashboard.View',
+  DashboardAIInsights: 'Dashboard.AIInsights',
 
   // User Management
   UsersCreate: 'Users.Create',

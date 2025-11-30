@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FolderKanban, LayoutDashboard, Users, Shield, Activity } from 'lucide-react';
+import { FolderKanban, LayoutDashboard, Users, Shield, Activity, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { usePermission } from '../../hooks/use-permission';
 import { Permissions } from '../../lib/permissions';
@@ -34,6 +34,12 @@ const links = [
     label: 'Aktivite Logları',
     icon: Activity,
     requiredPermission: Permissions.ActivityLogsView
+  },
+  {
+    to: '/admin/profile',
+    label: 'Profil',
+    icon: User,
+    requiredPermission: undefined // Herkes erişebilir
   }  
 ];
 
@@ -41,7 +47,9 @@ export function AdminSidebar({ collapsed }: { collapsed: boolean }) {
   const { hasPermission } = usePermission();
 
   // Permission'a göre menü itemlarını filtrele
-  const visibleLinks = links.filter((link) => hasPermission(link.requiredPermission));
+  const visibleLinks = links.filter((link) => 
+    link.requiredPermission === undefined || hasPermission(link.requiredPermission)
+  );
 
   return (
     <aside

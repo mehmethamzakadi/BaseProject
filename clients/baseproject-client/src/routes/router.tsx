@@ -10,6 +10,7 @@ import { CategoriesPage } from '../pages/admin/categories-page';
 import { UsersPage } from '../pages/admin/users-page';
 import { RolesPage } from '../pages/admin/roles-page';
 import { ActivityLogsPage } from '../pages/admin/activity-logs-page';
+import { ProfilePage } from '../pages/admin/profile-page';
 import ForbiddenPage from '../pages/ForbiddenPage';
 import { Permissions } from '../lib/permissions';
 
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
             <ActivityLogsPage />
           </ProtectedRoute>
         )
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
       }
     ]
   },

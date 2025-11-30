@@ -101,6 +101,11 @@ public sealed class User : AggregateRoot
     public DateTime? PasswordResetTokenExpiry { get; private set; }
 
     /// <summary>
+    /// Profil fotoğrafı URL'i
+    /// </summary>
+    public string? ProfilePictureUrl { get; private set; }
+
+    /// <summary>
     /// Kullanıcının rolleri
     /// </summary>
     public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
@@ -143,6 +148,14 @@ public sealed class User : AggregateRoot
         NormalizedEmail = emailVO.Value.ToUpperInvariant();
 
         AddDomainEvent(new Domain.Events.UserEvents.UserUpdatedEvent(Id, userName));
+    }
+
+    public void UpdateProfile(string? phoneNumber, string? profilePictureUrl)
+    {
+        PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim();
+        ProfilePictureUrl = string.IsNullOrWhiteSpace(profilePictureUrl) ? null : profilePictureUrl.Trim();
+
+        AddDomainEvent(new Domain.Events.UserEvents.UserUpdatedEvent(Id, UserName));
     }
 
     public void Delete()

@@ -1,6 +1,7 @@
 using BaseProject.Domain.Constants;
 using BaseProject.Domain.Entities;
 using BaseProject.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BaseProject.Persistence.DatabaseInitializer.Seeders;
@@ -24,11 +25,39 @@ public class PermissionSeeder : BaseSeeder
         var createdDate = new DateTime(2025, 10, 23, 7, 0, 0, DateTimeKind.Utc);
         
         var allPermissionNames = Permissions.GetAllPermissions();
-        var permissions = new List<Permission>();
+        
+        // Mevcut permission'ları kontrol et
+        var existingPermissions = await Context.Permissions
+            .Where(p => !p.IsDeleted)
+            .Select(p => new { p.NormalizedName, p.Id })
+            .ToListAsync(cancellationToken);
+        
+        var existingNormalizedNames = existingPermissions
+            .Select(p => p.NormalizedName)
+            .Where(n => n != null)
+            .ToHashSet();
+        
+        var existingIds = existingPermissions
+            .Select(p => p.Id)
+            .ToHashSet();
+
+        var permissionsToAdd = new List<Permission>();
+        
+        // Mevcut permission sayısına göre index'i başlat (yeni permission'lar için)
+        var permissionIndex = existingPermissions.Count;
 
         for (int index = 0; index < allPermissionNames.Count; index++)
         {
             var permissionName = allPermissionNames[index];
+            var normalizedName = permissionName.ToUpperInvariant();
+            
+            // NormalizedName'e göre kontrol et - zaten varsa atla
+            if (existingNormalizedNames.Contains(normalizedName))
+            {
+                Logger.LogDebug("Permission already exists: {PermissionName}, skipping", permissionName);
+                continue;
+            }
+
             var parts = permissionName.Split('.');
             var module = parts[0];
             var type = parts.Length > 1 ? parts[1] : "Custom";
@@ -40,16 +69,40 @@ public class PermissionSeeder : BaseSeeder
                 GetPermissionDescription(permissionName)
             );
 
+            // ID atama - mevcut ID'lerle çakışmayacak şekilde
+            Guid permissionId;
+            do
+            {
+                permissionIndex++;
+                permissionId = Guid.Parse($"30000000-0000-0000-0000-000000000{permissionIndex:D3}");
+            } while (existingIds.Contains(permissionId) && permissionIndex < 1000);
+
+            // Eğer 1000'e ulaşırsa, Guid.NewGuid() kullan
+            if (permissionIndex >= 1000)
+            {
+                permissionId = Guid.NewGuid();
+                Logger.LogWarning("Permission ID index exceeded 1000, using random GUID for: {PermissionName}", permissionName);
+            }
+
             // Sabit ID ve tarihleri EF Core ile set et
             var entry = Context.Entry(permission);
-            entry.Property("Id").CurrentValue = Guid.Parse($"30000000-0000-0000-0000-000000000{index + 1:D3}");
+            entry.Property("Id").CurrentValue = permissionId;
             entry.Property("CreatedDate").CurrentValue = createdDate;
             entry.Property("IsDeleted").CurrentValue = false;
 
-            permissions.Add(permission);
+            permissionsToAdd.Add(permission);
+            existingIds.Add(permissionId); // Yeni ID'yi de set'e ekle
         }
 
-        await AddRangeIfNotExistsAsync(permissions, p => (Guid)Context.Entry(p).Property("Id").CurrentValue!, cancellationToken);
+        if (permissionsToAdd.Any())
+        {
+            await Context.Permissions.AddRangeAsync(permissionsToAdd, cancellationToken);
+            Logger.LogInformation("Added {Count} new Permission records", permissionsToAdd.Count);
+        }
+        else
+        {
+            Logger.LogInformation("All Permission records already exist, skipping");
+        }
     }
 
     private static string GetPermissionDescription(string permissionName)
@@ -57,6 +110,7 @@ public class PermissionSeeder : BaseSeeder
         return permissionName switch
         {
             Permissions.DashboardView => "Admin paneli dashboard'una erişim yetkisi",
+            Permissions.DashboardAIInsights => "Dashboard AI içgörüleri görüntüleme yetkisi",
             Permissions.UsersCreate => "Yeni kullanıcı oluşturma yetkisi",
             Permissions.UsersRead => "Kullanıcı bilgilerini görüntüleme yetkisi",
             Permissions.UsersUpdate => "Kullanıcı bilgilerini güncelleme yetkisi",

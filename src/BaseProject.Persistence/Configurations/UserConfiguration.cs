@@ -65,6 +65,10 @@ public class UserConfiguration : BaseConfiguraiton<User>
         builder.Property(u => u.PasswordResetToken)
             .HasMaxLength(500);
 
+        // Profile Picture
+        builder.Property(u => u.ProfilePictureUrl)
+            .HasMaxLength(500);
+
         // Indexes
         builder.HasIndex(u => u.NormalizedUserName)
             .IsUnique()

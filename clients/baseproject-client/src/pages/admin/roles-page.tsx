@@ -70,9 +70,9 @@ export function RolesPage() {
       },
       {
         id: 'actions',
-        header: 'İşlemler',
+        header: () => <div className="text-right">İşlemler</div>,
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             {hasPermission(Permissions.RolesAssignPermissions) && (
               <Button
                 variant="ghost"
