@@ -1,0 +1,69 @@
+using BaseProject.Application.Features.Roles.Commands.BulkDelete;
+using BaseProject.Application.Features.Roles.Commands.Create;
+using BaseProject.Application.Features.Roles.Commands.Delete;
+using BaseProject.Application.Features.Roles.Commands.Update;
+using BaseProject.Application.Features.Roles.Queries.GetList;
+using BaseProject.Application.Features.Roles.Queries.GetRoleById;
+using BaseProject.Domain.Common.Requests;
+using BaseProject.Domain.Common.Responses;
+using BaseProject.Domain.Constants;
+using BaseProject.Infrastructure.Authorization;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BaseProject.API.Controllers
+{
+    public class RoleController(IMediator mediator) : BaseApiController(mediator)
+    {
+        [HttpGet]
+        [HasPermission(Permissions.RolesViewAll)]
+        public async Task<IActionResult> GetList([FromQuery] PaginatedRequest pageRequest)
+        {
+            PaginatedListResponse<GetListRoleResponse> response = await Mediator.Send(new GetListRoleQuery(pageRequest));
+            return Ok(response);
+        }
+
+        [HttpGet("{id}")]
+        [HasPermission(Permissions.RolesRead)]
+        public async Task<IActionResult> GetById([FromRoute] Guid id)
+        {
+            var response = await Mediator.Send(new GetRoleByIdRequest(id));
+            return Ok(response);
+        }
+
+        [HttpPost]
+        [HasPermission(Permissions.RolesCreate)]
+        public async Task<IActionResult> Create([FromBody] CreateRoleCommand command)
+        {
+            return ToResponse(await Mediator.Send(command));
+        }
+
+        [HttpPut("{id}")]
+        [HasPermission(Permissions.RolesUpdate)]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateRoleCommand command)
+        {
+            if (id != command.Id)
+                return BadRequest("ID mismatch");
+
+            return ToResponse(await Mediator.Send(command));
+        }
+
+        [HttpDelete("{id}")]
+        [HasPermission(Permissions.RolesDelete)]
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
+        {
+            return ToResponse(await Mediator.Send(new DeleteRoleCommand(id)));
+        }
+
+        /// <summary>
+        /// Birden fazla rolü toplu olarak siler
+        /// </summary>
+        [HttpPost("bulk-delete")]
+        [HasPermission(Permissions.RolesDelete)]
+        public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteRolesCommand command)
+        {
+            var response = await Mediator.Send(command);
+            return Ok(response);
+        }
+    }
+}

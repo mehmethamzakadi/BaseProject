@@ -1,0 +1,45 @@
+using BaseProject.Domain.Entities;
+using BaseProject.Domain.Repositories;
+using BaseProject.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
+
+namespace BaseProject.Persistence.Repositories;
+
+public sealed class RefreshSessionRepository : EfRepositoryBase<RefreshSession, BaseProjectDbContext>, IRefreshSessionRepository
+{
+    public RefreshSessionRepository(BaseProjectDbContext context) : base(context)
+    {
+    }
+
+    public async Task<RefreshSession?> GetByTokenHashAsync(string tokenHash, bool includeDeleted = false, CancellationToken cancellationToken = default)
+    {
+        IQueryable<RefreshSession> query = Context.RefreshSessions.AsQueryable();
+
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
+        return await query.FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<RefreshSession>> GetActiveSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await Context.RefreshSessions
+            .Where(x => x.UserId == userId && !x.Revoked && x.ExpiresAt > DateTime.UtcNow)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteExpiredSessionsAsync(CancellationToken cancellationToken = default)
+    {
+        // Süresi dolmuş veya iptal edilmiş session'ları sil (30 gün üzeri)
+        var cutoffDate = DateTime.UtcNow.AddDays(-30);
+
+        return await Context.RefreshSessions
+            .IgnoreQueryFilters()
+            .Where(x =>
+                (x.Revoked && x.RevokedAt < cutoffDate) ||
+                (!x.Revoked && x.ExpiresAt < cutoffDate))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+}

@@ -1,0 +1,9 @@
+namespace BaseProject.Application.Abstractions;
+
+public interface ICacheService
+{
+    Task<T?> Get<T>(string key);
+    Task Add(string key, object data, DateTimeOffset? absExpr, TimeSpan? sldExpr);
+    Task<bool> AnyAsync(string key);
+    Task Remove(string key);
+}

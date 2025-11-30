@@ -1,0 +1,4 @@
+1- Package Manager Console �zerinde Default Project -src\BlogApp.Persistence se�ili olmal�d�r.
+2- add-migration Init -C BlogAppDbContext -O Migrations/PostgreSql
+3- dotnet ef migrations add Init -c BlogAppDbContext -o Migrations/PostgreSql
+3- update-database -C BlogAppDbContext
