@@ -1,6 +1,7 @@
 using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BaseProject.Application.Features.Users.Queries.GetUserRoles;
 
@@ -17,7 +18,13 @@ public class GetUserRolesQueryHandler : IRequestHandler<GetUserRolesQuery, IData
 
     public async Task<IDataResult<GetUserRolesResponse>> Handle(GetUserRolesQuery request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindByIdAsync(request.UserId);
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        var user = await _userRepository.GetAsync(
+            u => u.Id == request.UserId,
+            include: q => q.Include(u => u.UserRoles).ThenInclude(ur => ur.Role),
+            enableTracking: false,
+            cancellationToken: cancellationToken);
+
         if (user == null)
         {
             return new ErrorDataResult<GetUserRolesResponse>("Kullanıcı bulunamadı");

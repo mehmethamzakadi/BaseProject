@@ -36,6 +36,7 @@ public class GetPaginatedActivityLogsQueryHandler : IRequestHandler<GetPaginated
 
         dynamicQuery.Sort = sortDescriptors;
 
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         Paginate<ActivityLog> activityLogs = await _activityLogRepository.GetPaginatedListByDynamicAsync(
             dynamic: dynamicQuery,
             index: request.Request.PaginatedRequest.PageIndex,

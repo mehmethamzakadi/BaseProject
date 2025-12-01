@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { login } from '../../features/auth/api';
@@ -24,6 +24,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const loginStore = useAuthStore((state) => state.login);
 
   const {
@@ -55,6 +56,9 @@ export function LoginPage() {
         },
         token: response.data.token
       });
+
+      // ✅ Yeni kullanıcı giriş yaptığında profil cache'ini temizle
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
 
       toast.success('Yönetim paneline hoş geldiniz!');
       const redirectTo =

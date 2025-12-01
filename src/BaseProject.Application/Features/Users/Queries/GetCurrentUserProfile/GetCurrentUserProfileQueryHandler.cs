@@ -2,6 +2,7 @@ using BaseProject.Application.Abstractions;
 using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BaseProject.Application.Features.Users.Queries.GetCurrentUserProfile;
 
@@ -17,7 +18,13 @@ public sealed class GetCurrentUserProfileQueryHandler(
             return new ErrorDataResult<GetCurrentUserProfileResponse>("Kullanıcı kimliği bulunamadı.");
         }
 
-        var user = await userRepository.FindByIdAsync(userId.Value);
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        var user = await userRepository.GetAsync(
+            u => u.Id == userId.Value,
+            include: q => q.Include(u => u.UserRoles).ThenInclude(ur => ur.Role),
+            enableTracking: false,
+            cancellationToken: cancellationToken);
+
         if (user == null)
         {
             return new ErrorDataResult<GetCurrentUserProfileResponse>("Kullanıcı bulunamadı.");

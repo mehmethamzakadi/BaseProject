@@ -28,6 +28,38 @@ x-logging: &logging
 
 services:
   # ===========================================
+  # Client Service - Production
+  # ===========================================
+  baseproject.client:
+    image: ${DOCKER_REGISTRY:-}baseprojectclient:${TAG:-latest}
+    build:
+      context: ./clients/baseproject-client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://api.yourdomain.com}
+    container_name: baseproject_client_prod
+    restart: always
+    expose:
+      - "80" # Sadece internal network'ten erişilebilir (nginx üzerinden)
+    depends_on:
+      baseproject.api:
+        condition: service_healthy
+    networks:
+      - baseproject_prod_net
+    <<: *logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      <<: *common-healthcheck
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+  # ===========================================
   # Nginx Reverse Proxy (Gateway)
   # ===========================================
   nginx:
@@ -45,6 +77,8 @@ services:
       # - ./deploy/nginx/certbot:/var/www/certbot:ro
     depends_on:
       baseproject.api:
+        condition: service_healthy
+      baseproject.client:
         condition: service_healthy
     networks:
       - baseproject_prod_net
@@ -66,7 +100,7 @@ services:
     container_name: baseproject_api_prod
     restart: always
     expose:
-      - "8080"                # Sadece internal network'ten erişilebilir
+      - "8080" # Sadece internal network'ten erişilebilir
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://0.0.0.0:8080
@@ -105,7 +139,7 @@ services:
       # Seq Logging
       Serilog__WriteTo__1__Args__serverUrl: http://seq:80
       # CORS Policy (Production'da sadece kendi domaininden gelen isteklere izin ver)
-      CorsOptions__AllowedOrigins: "${APP_URL:-https://yourdomain.com}"
+      CorsOptions__AllowedOrigins: "${APP_URL:-https://yourdomain.com},http://baseproject.client"
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -122,10 +156,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: "2"
           memory: 1G
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 256M
 
   # ===========================================
@@ -168,7 +202,7 @@ services:
       - "-c"
       - "effective_io_concurrency=200"
       - "-c"
-      - "log_min_duration_statement=1000"  # 1 saniyeden uzun sorguları logla
+      - "log_min_duration_statement=1000" # 1 saniyeden uzun sorguları logla
       - "-c"
       - "log_checkpoints=on"
       - "-c"
@@ -186,10 +220,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: "2"
           memory: 2G
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
 
   # ===========================================
@@ -220,10 +254,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 512M
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 128M
 
   # ===========================================
@@ -255,10 +289,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 768M
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256M
 
   # ===========================================
@@ -284,10 +318,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 512M
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 128M
 
 # ===========================================

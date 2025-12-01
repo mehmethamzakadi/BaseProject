@@ -1,6 +1,7 @@
 using BaseProject.Domain.Common.Results;
 using BaseProject.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace BaseProject.Application.Features.Permissions.Queries.GetRolePermissions;
 
@@ -17,7 +18,12 @@ public class GetRolePermissionsQueryHandler : IRequestHandler<GetRolePermissions
 
     public async Task<IDataResult<GetRolePermissionsResponse>> Handle(GetRolePermissionsQuery request, CancellationToken cancellationToken)
     {
-        var role = _roleRepository.GetRoleById(request.RoleId);
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        var role = await _roleRepository.GetAsync(
+            r => r.Id == request.RoleId,
+            enableTracking: false,
+            cancellationToken: cancellationToken);
+
         if (role == null)
         {
             return new ErrorDataResult<GetRolePermissionsResponse>("Rol bulunamadı");

@@ -11,6 +11,8 @@ public sealed class GetListUserQueryHandler(IUserRepository userRepository, IMap
 {
     public async Task<PaginatedListResponse<GetListUserResponse>> Handle(GetListUsersQuery request, CancellationToken cancellationToken)
     {
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        // GetUsersAsync metodu zaten Include kullanıyor, tracking kapalı olmalı
         Paginate<User> userList = await userRepository.GetUsersAsync(
         index: request.PageRequest.PageIndex,
         size: request.PageRequest.PageSize,

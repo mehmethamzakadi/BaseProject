@@ -5,7 +5,7 @@ using BaseProject.Domain.Repositories;
 using BaseProject.Persistence.Contexts;
 using BaseProject.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
- 
+
 
 namespace BaseProject.Persistence.Repositories;
 
@@ -31,7 +31,9 @@ public class ActivityLogRepository : IActivityLogRepository
 
     public async Task<List<ActivityLog>> GetRecentActivitiesAsync(int count = 10, CancellationToken cancellationToken = default)
     {
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         return await _context.ActivityLogs
+            .AsNoTracking()
             .Include(a => a.User)
             .OrderByDescending(a => a.Timestamp)
             .Take(count)
@@ -45,7 +47,10 @@ public class ActivityLogRepository : IActivityLogRepository
         Func<IQueryable<ActivityLog>, IQueryable<ActivityLog>>? include = null,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<ActivityLog> queryable = _context.ActivityLogs.AsQueryable();
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        IQueryable<ActivityLog> queryable = _context.ActivityLogs
+            .AsNoTracking()
+            .AsQueryable();
 
         if (include != null)
             queryable = include(queryable);

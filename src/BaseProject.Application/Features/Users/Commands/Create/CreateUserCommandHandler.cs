@@ -47,7 +47,11 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
 
         await _userRepository.AddAsync(user);
 
-        var userRole = await _roleRepository.GetAsync(r => r.NormalizedName == UserRoles.User.ToUpperInvariant());
+        // ✅ Read-only lookup - tracking'e gerek yok (performans için)
+        var userRole = await _roleRepository.GetAsync(
+            r => r.NormalizedName == UserRoles.User.ToUpperInvariant(),
+            enableTracking: false,
+            cancellationToken: cancellationToken);
         if (userRole != null)
         {
             var roleResult = _userDomainService.AddToRole(user, userRole);

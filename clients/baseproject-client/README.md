@@ -4,11 +4,33 @@ Modern, production-ready React istemcisi. BaseProject REST API ile tam entegre e
 
 ## 🚀 Hızlı Başlangıç
 
-### Gereksinimler
+### Docker ile Kurulum (Önerilen)
+
+Client uygulaması Docker ile otomatik olarak build edilir ve Nginx ile serve edilir:
+
+```bash
+# Proje kök dizininden tüm servisleri başlat (Backend + Frontend)
+cd ../..  # Proje kök dizinine dön
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
+
+# Sadece client servisini başlatmak için
+docker compose -f docker-compose.local.yml up --build -d baseproject.client
+
+# Client loglarını izle
+docker compose -f docker-compose.local.yml logs -f baseproject.client
+```
+
+**Erişim:**
+- **Client UI:** http://localhost:5173
+- **Backend API:** http://localhost:6060
+
+### Manuel Kurulum (Development)
+
+#### Gereksinimler
 - Node.js 18+ 
 - npm veya yarn
 
-### Kurulum
+#### Kurulum Adımları
 
 1. **Bağımlılıkları yükleyin:**
    ```bash
@@ -43,6 +65,22 @@ Modern, production-ready React istemcisi. BaseProject REST API ile tam entegre e
    Uygulama varsayılan olarak `http://localhost:5173` adresinde çalışacaktır.
 
 ### Production Build
+
+#### Docker ile (Önerilen)
+
+Docker build sırasında otomatik olarak production build yapılır:
+
+```bash
+# Docker Compose ile build
+docker compose -f docker-compose.local.yml build baseproject.client
+
+# Veya production için
+docker compose -f docker-compose.prod.yml build baseproject.client
+```
+
+**Not:** Docker build sırasında `VITE_API_URL` build argümanı olarak geçilir. `docker-compose.local.yml` veya `docker-compose.prod.yml` dosyalarında bu değeri güncelleyebilirsiniz.
+
+#### Manuel Build
 
 ```bash
 # Production build (production mode)
@@ -149,7 +187,26 @@ src/
 
 ## 🔧 Yapılandırma
 
+### Docker Yapılandırması
+
+Client Dockerfile'ı multi-stage build kullanır:
+1. **Build Stage:** Node.js ile React uygulaması build edilir
+2. **Production Stage:** Nginx ile build edilmiş dosyalar serve edilir
+
+**Docker Build Arguments:**
+- `VITE_API_URL`: API endpoint URL'i (build-time environment variable)
+
+**Örnek Docker Build:**
+```bash
+docker build \
+  --build-arg VITE_API_URL=http://localhost:6060 \
+  -t baseproject-client:latest \
+  -f Dockerfile .
+```
+
 ### Environment Variables
+
+#### Manuel Development
 
 Vite otomatik olarak ortam bazlı environment variable dosyalarını yükler:
 
@@ -171,6 +228,21 @@ VITE_API_URL=https://api.yourdomain.com
 - `.env.development` ve `.env.production` dosyaları git'e commit edilmelidir (template olarak)
 - Gerçek production URL'lerini `.env.production` dosyasında güncelleyin
 - `.env` dosyası (varsa) `.gitignore`'da olduğu için commit edilmez
+
+#### Docker Compose
+
+Docker Compose dosyalarında `VITE_API_URL` build argümanı olarak geçilir:
+
+```yaml
+baseproject.client:
+  build:
+    context: ./clients/baseproject-client
+    dockerfile: Dockerfile
+    args:
+      - VITE_API_URL=http://localhost:6060  # Development
+      # veya
+      - VITE_API_URL=https://api.yourdomain.com  # Production
+```
 
 ### API Client
 

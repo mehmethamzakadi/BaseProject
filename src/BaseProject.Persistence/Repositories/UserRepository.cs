@@ -15,7 +15,9 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
 
     public async Task<Paginate<User>> GetUsersAsync(int index, int size, CancellationToken cancellationToken)
     {
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         return await Context.Users
+            .AsNoTracking()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .OrderBy(u => u.Id)
@@ -24,6 +26,8 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
 
     public async Task<User?> FindByIdAsync(Guid id)
     {
+        // ✅ Default tracking açık (global ayar Tracking olduğu için)
+        // Update/Delete işlemleri için tracking gerekli
         return await Context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
@@ -32,8 +36,10 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
 
     public async Task<User?> FindByEmailAsync(string email)
     {
+        // ✅ Validation için kullanılıyor - tracking'e gerek yok (performans için)
         var normalizedEmail = email.ToUpperInvariant();
         return await Context.Users
+            .AsNoTracking()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
@@ -41,8 +47,10 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
 
     public async Task<User?> FindByUserNameAsync(string userName)
     {
+        // ✅ Validation için kullanılıyor - tracking'e gerek yok (performans için)
         var normalizedUserName = userName.ToUpperInvariant();
         return await Context.Users
+            .AsNoTracking()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedUserName);

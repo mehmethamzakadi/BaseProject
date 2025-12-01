@@ -15,11 +15,13 @@ public sealed class GetPaginatedListByDynamicUsersQueryHandler(
 {
     public async Task<PaginatedListResponse<GetPaginatedListByDynamicUsersResponse>> Handle(GetPaginatedListByDynamicUsersQuery request, CancellationToken cancellationToken)
     {
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         Paginate<User> usersDynamic = await userRepository.GetPaginatedListByDynamicAsync(
             dynamic: request.DataGridRequest.DynamicQuery,
             index: request.DataGridRequest.PaginatedRequest.PageIndex,
             size: request.DataGridRequest.PaginatedRequest.PageSize,
             include: q => q.Include(u => u.UserRoles).ThenInclude(ur => ur.Role),
+            enableTracking: false,
             cancellationToken: cancellationToken
         );
 

@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { ImageUploadField } from '../../components/forms/image-upload-field';
 import { handleApiError, showApiResponseError } from '../../lib/api-error';
 import { resolveApiAssetUrl } from '../../lib/utils';
+import { useAuthStore } from '../../stores/auth-store';
 
 const profileSchema = z.object({
   userName: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır'),
@@ -40,11 +41,14 @@ type PasswordFormSchema = z.infer<typeof passwordSchema>;
 export function ProfilePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('profile');
+  const currentUserId = useAuthStore((state) => state.user?.userId);
 
   // Queries
+  // ✅ Query key'e kullanıcı ID'si ekle - kullanıcı değiştiğinde cache otomatik ayrılır
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['profile', 'current'],
-    queryFn: getCurrentUserProfile
+    queryKey: ['profile', 'current', currentUserId],
+    queryFn: getCurrentUserProfile,
+    enabled: !!currentUserId // Kullanıcı ID yoksa query çalışmasın
   });
 
   // Forms
@@ -88,7 +92,8 @@ export function ProfilePage() {
         return;
       }
       toast.success(result.message || 'Profil başarıyla güncellendi');
-      queryClient.invalidateQueries({ queryKey: ['profile', 'current'] });
+      // ✅ Kullanıcı ID'si ile invalidate et
+      queryClient.invalidateQueries({ queryKey: ['profile', 'current', currentUserId] });
     },
     onError: (error) => handleApiError(error, 'Profil güncellenirken hata oluştu')
   });

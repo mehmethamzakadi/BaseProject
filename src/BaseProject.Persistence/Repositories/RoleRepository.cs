@@ -13,13 +13,18 @@ public sealed class RoleRepository(BaseProjectDbContext context) : EfRepositoryB
 
     public async Task<Paginate<Role>> GetRoles(int index, int size, CancellationToken cancellationToken)
     {
-        return await Context.Roles.ToPaginateAsync(index, size, cancellationToken);
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        return await Context.Roles
+            .AsNoTracking()
+            .ToPaginateAsync(index, size, cancellationToken);
     }
 
     public Role? GetRoleById(Guid id)
     {
-        // ✅ Tracking enabled - Entity will be tracked by EF Core
-        // This allows domain events to be properly captured and processed
+        // ⚠️ DEPRECATED: Bu metod artık kullanılmamalı
+        // Query handler'larda GetAsync(enableTracking: false) kullanılmalı
+        // Command handler'larda GetAsync(enableTracking: true) kullanılmalı
+        // Tracking açık tutuluyor çünkü bazı eski kodlar hala kullanıyor olabilir
         var result = Context.Roles
             .FirstOrDefault(x => x.Id == id);
         return result;
@@ -69,10 +74,11 @@ public sealed class RoleRepository(BaseProjectDbContext context) : EfRepositoryB
 
     public async Task<Role?> FindByNameAsync(string roleName)
     {
-        // ✅ Tracking enabled - Entity will be tracked by EF Core
+        // ✅ Validation için kullanılıyor - tracking'e gerek yok (performans için)
         // ✅ NormalizedName üzerinden case-insensitive karşılaştırma
         var normalizedName = roleName.ToUpperInvariant();
         return await Context.Roles
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.NormalizedName == normalizedName);
     }
 
@@ -88,7 +94,9 @@ public sealed class RoleRepository(BaseProjectDbContext context) : EfRepositoryB
 
     public async Task<List<Role>> GetByIdsAsync(List<Guid> roleIds, CancellationToken cancellationToken = default)
     {
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         return await Query()
+            .AsNoTracking()
             .Where(r => roleIds.Contains(r.Id))
             .ToListAsync(cancellationToken);
     }

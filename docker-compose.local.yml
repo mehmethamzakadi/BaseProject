@@ -15,6 +15,31 @@ x-common-healthcheck: &common-healthcheck
 
 services:
   # ===========================================
+  # Client Service - Development
+  # ===========================================
+  baseproject.client:
+    build:
+      context: ./clients/baseproject-client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:6060
+    container_name: baseproject_client_dev
+    restart: unless-stopped
+    ports:
+      - "5173:80" # Client UI
+    depends_on:
+      baseproject.api:
+        condition: service_started
+    networks:
+      - baseproject_local_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================
   # API Service - Development
   # ===========================================
   baseproject.api:
@@ -67,8 +92,8 @@ services:
       OllamaOptions__TimeoutMinutes: 2
       OllamaOptions__RetryCount: 3
       OllamaOptions__RetryDelaySeconds: 2
-      # CORS Policy
-      CorsOptions__AllowedOrigins: "http://localhost:5173"
+      # CORS Policy (Client Docker container'dan gelen istekler için)
+      CorsOptions__AllowedOrigins: "http://localhost:5173,http://baseproject.client"
       # OpenTelemetry - Jaeger
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -82,7 +107,7 @@ services:
       # Ollama opsiyonel - API Ollama olmadan da çalışabilir
       # ollama dependency kaldırıldı - AI özellikleri opsiyonel
     ports:
-      - "6060:8080"          # API endpoint
+      - "6060:8080" # API endpoint
     volumes:
       # Hot reload için appsettings mount
       - ./src/BaseProject.API/appsettings.Development.json:/app/appsettings.Development.json:ro
@@ -116,11 +141,11 @@ services:
       - "-c"
       - "shared_buffers=128MB"
       - "-c"
-      - "log_statement=all"   # Development için tüm SQL logla
+      - "log_statement=all" # Development için tüm SQL logla
       - "-c"
       - "log_duration=on"
     ports:
-      - "5435:5432"           # Host'tan erişim için
+      - "5435:5432" # Host'tan erişim için
     volumes:
       - postgres_local_data:/var/lib/postgresql/data
     networks:
@@ -141,8 +166,8 @@ services:
       RABBITMQ_DEFAULT_USER: baseproject
       RABBITMQ_DEFAULT_PASS: supersecret
     ports:
-      - "15672:15672"         # Management UI
-      - "5672:5672"           # AMQP
+      - "15672:15672" # Management UI
+      - "5672:5672" # AMQP
     volumes:
       - rabbitmq_local_data:/var/lib/rabbitmq
     networks:
@@ -164,7 +189,7 @@ services:
       --maxmemory 128mb
       --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"           # Host'tan erişim için
+      - "6379:6379" # Host'tan erişim için
     volumes:
       - redis_local_data:/data
     networks:
@@ -184,7 +209,7 @@ services:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_ADMINPASSWORD: Admin123!
     ports:
-      - "5341:80"             # Seq Web UI
+      - "5341:80" # Seq Web UI
     volumes:
       - seq_local_data:/data
     networks:
@@ -205,7 +230,7 @@ services:
     container_name: baseproject_ollama_dev
     restart: unless-stopped
     ports:
-      - "11434:11434"         # Ollama API
+      - "11434:11434" # Ollama API
     volumes:
       - ollama_local_data:/root/.ollama
     networks:
@@ -217,7 +242,7 @@ services:
       interval: 60s
       timeout: 10s
       retries: 1
-      start_period: 120s  # Ollama başlatma için daha fazla süre
+      start_period: 120s # Ollama başlatma için daha fazla süre
 
   # ===========================================
   # Jaeger - Distributed Tracing UI
@@ -229,14 +254,18 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "16686:16686"         # Jaeger UI
-      - "4317:4317"            # OTLP gRPC receiver
-      - "4318:4318"            # OTLP HTTP receiver
+      - "16686:16686" # Jaeger UI
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
     networks:
       - baseproject_local_net
     # Jaeger all-in-one hızlı başlar
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:16686/ || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:16686/ || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -249,7 +278,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: baseproject_pgadmin_dev
     restart: unless-stopped
-    profiles: ["tools"]       # docker-compose --profile tools up -d
+    profiles: ["tools"] # docker-compose --profile tools up -d
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@baseproject.local
       PGADMIN_DEFAULT_PASSWORD: admin123

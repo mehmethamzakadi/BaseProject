@@ -18,6 +18,21 @@ x-restart-policy: &restart-policy
 
 services:
   # ===========================================
+  # Client Service
+  # ===========================================
+  baseproject.client:
+    image: ${DOCKER_REGISTRY:-}baseprojectclient:${TAG:-latest}
+    build:
+      context: ./clients/baseproject-client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:6060}
+    <<: *restart-policy
+    depends_on:
+      baseproject.api:
+        condition: service_started
+
+  # ===========================================
   # API Service
   # ===========================================
   baseproject.api:

@@ -33,11 +33,13 @@ public sealed class GetPaginatedListByDynamicCategoriesQueryHandler(
             return cachedResponse;
         }
 
+        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
         Paginate<Category> categoriesDynamic = await categoryRepository.GetPaginatedListByDynamicAsync(
             dynamic: request.DataGridRequest.DynamicQuery,
             index: pagination.PageIndex,
             size: pagination.PageSize,
             include: q => q.Include(c => c.Parent),
+            enableTracking: false,
             cancellationToken: cancellationToken
         );
 

@@ -24,7 +24,10 @@ public static class PersistenceServicesRegistration
                 npgsqlOptions.MaxBatchSize(100);
                 npgsqlOptions.CommandTimeout(30);
             });
-            options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution);
+            // ✅ Default Tracking (EF Core default) - Update/Delete işlemleri için gerekli
+            // Read-only sorgularda .AsNoTracking() kullanılmalı (performans için)
+            // NoTrackingWithIdentityResolution sadece özel durumlar için kullanılır
+            // options.UseQueryTrackingBehavior(QueryTrackingBehavior.Tracking); // Default, açıkça belirtmeye gerek yok
             options.EnableServiceProviderCaching();
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         });

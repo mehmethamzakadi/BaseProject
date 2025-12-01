@@ -186,7 +186,7 @@ BaseProject/
 git clone https://github.com/mehmethamzakadi/BaseProject.git
 cd BaseProject
 
-# Tüm servisleri başlat
+# Tüm servisleri başlat (Backend + Frontend + Tüm servisler)
 docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
 # Veya sadece local dosyası ile
@@ -197,9 +197,22 @@ docker exec -it baseproject_ollama_dev ollama pull qwen2.5:7b
 
 # Logları izle
 docker compose -f docker-compose.local.yml logs -f baseproject.api
+docker compose -f docker-compose.local.yml logs -f baseproject.client
+
+# Servislerin durumunu kontrol et
+docker compose -f docker-compose.local.yml ps
 ```
 
-### Manuel Kurulum
+**Erişim URL'leri:**
+- **Frontend (React Client):** http://localhost:5173
+- **Backend API:** http://localhost:6060
+- **API Dokümantasyonu (Scalar):** http://localhost:6060/scalar/v1
+- **Seq Log Viewer:** http://localhost:5341
+- **Jaeger Tracing UI:** http://localhost:16686
+- **RabbitMQ Management:** http://localhost:15672
+- **Ollama API:** http://localhost:11434
+
+### Manuel Kurulum (Docker Olmadan)
 
 #### 1. Veritabanı ve Servisleri Başlat
 
@@ -235,10 +248,14 @@ npm install
 
 # Environment variables otomatik yüklenir (.env.development)
 # Gerekirse clients/baseproject-client/.env.development dosyasını güncelleyin
+# VITE_API_URL=http://localhost:6060 (Docker API için)
+# VITE_API_URL=http://localhost:5285 (Local .NET için)
 
 # Development server başlat
 npm run dev
 ```
+
+**Not:** Docker ile çalıştırırken frontend otomatik olarak build edilir ve Nginx ile serve edilir. Manuel kurulum sadece development için önerilir.
 
 ### Environment Variables
 
@@ -294,6 +311,7 @@ cp .env.example .env.production
 | `Serilog__SeqApiKey` | Seq API key (opsiyonel) | - |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry OTLP endpoint | `http://jaeger:4317` (Docker) / `http://localhost:4317` (Local) |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP protokol (grpc/http) | `grpc` |
+| `VITE_API_URL` | Frontend API URL (build-time) | `http://localhost:6060` (Docker) / `http://localhost:5285` (Local) |
 
 ---
 
@@ -360,6 +378,32 @@ curl -X GET "http://localhost:5000/api/dashboards/ai-insights" \
 
 ## 🛠️ Geliştirme
 
+### Makefile ile Hızlı Başlangıç (Önerilen)
+
+Projeyi yönetmek için Makefile veya Windows batch script'i kullanabilirsiniz:
+
+```bash
+# Linux/macOS
+make help          # Tüm komutları göster
+make dev           # Development ortamını başlat
+make stop          # Servisleri durdur (volume'lar korunur)
+make down          # Servisleri durdur ve volume'ları sil
+
+# Windows PowerShell
+.\make.bat help    # Tüm komutları göster (PowerShell'de .\ gerekli)
+.\make.bat dev     # Development ortamını başlat
+.\make.bat stop    # Servisleri durdur (volume'lar korunur)
+
+# Windows Command Prompt (CMD)
+make.bat help      # Tüm komutları göster
+make.bat dev       # Development ortamını başlat
+make.bat stop      # Servisleri durdur (volume'lar korunur)
+```
+
+**⚠️ Windows PowerShell'de:** Current directory'deki script'leri çalıştırmak için `.\` prefix'i gereklidir.
+
+**Detaylı kullanım için:** [QUICK_START.md](QUICK_START.md) (Windows için) | [Makefile Kullanım Rehberi](README_MAKEFILE.md)
+
 ### Geliştirme Ortamı Kurulumu
 
 ```bash
@@ -367,13 +411,13 @@ curl -X GET "http://localhost:5000/api/dashboards/ai-insights" \
 git clone https://github.com/mehmethamzakadi/BaseProject.git
 cd BaseProject
 
-# Solution'ı restore et
-dotnet restore
+# Makefile ile (ÖNERİLEN)
+make dev
 
-# Servisleri başlat
-docker-compose -f docker-compose.local.yml up -d
+# Veya manuel olarak
+docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 
-# API'yi çalıştır
+# API'yi manuel çalıştırmak için
 cd src/BaseProject.API
 dotnet watch run
 ```
@@ -381,12 +425,22 @@ dotnet watch run
 ### Migration Oluşturma
 
 ```bash
+# Makefile ile (ÖNERİLEN - Docker container içinde)
+make migrate NAME=MigrationName
+# veya Windows'ta
+make.bat migrate NAME=MigrationName
+
+# Migration'ları uygula
+make migrate-up
+make.bat migrate-up
+
+# Migration listesini göster
+make migrate-list
+make.bat migrate-list
+
+# Manuel olarak (local development)
 cd src/BaseProject.API
-
-# Yeni migration oluştur
 dotnet ef migrations add MigrationName -p ../BaseProject.Persistence -o Migrations/PostgreSql
-
-# Migration uygula
 dotnet ef database update -p ../BaseProject.Persistence
 ```
 
@@ -412,7 +466,23 @@ dotnet build /p:TreatWarningsAsErrors=true
 
 ---
 
-## 📊 Monitoring
+## 📊 Monitoring ve Servis Erişimleri
+
+### Frontend (React Client)
+
+```
+http://localhost:5173
+```
+
+Docker ile çalıştırıldığında Nginx üzerinden serve edilir. Production build otomatik olarak yapılır.
+
+### Backend API
+
+```
+http://localhost:6060
+```
+
+API dokümantasyonu: http://localhost:6060/scalar/v1
 
 ### Seq Log Viewer
 

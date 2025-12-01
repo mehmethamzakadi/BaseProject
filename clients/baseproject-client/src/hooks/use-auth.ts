@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/auth-store';
 import { logout as logoutRequest } from '../features/auth/api';
 import { refreshAccessToken } from '../lib/axios';
+import { queryClient } from '../providers/query-client';
 
 // Token süresinin son 5 dakikasında refresh yap
 const SILENT_REFRESH_WINDOW_MS = 5 * 60 * 1000; // 5 dakika
@@ -23,6 +24,8 @@ export function useAuth() {
     } catch {
       // Sunucuya ulaşılamasa bile istemci oturumunu kapat
     } finally {
+      // ✅ React Query cache'ini temizle (kullanıcı değiştiğinde eski veriler görünmesin)
+      queryClient.clear();
       logoutStore();
       if (typeof window !== 'undefined') {
         const attributes = ['Max-Age=0', 'Path=/'];
