@@ -112,6 +112,42 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 - appsettings.json'a Serilog konfigürasyon bloğu eklendi
 - docker-compose.local.yml'de Seq URL environment variable düzeltildi
 
+### 2.9 ✅ ActivityLogConsumer Race Condition Düzeltmesi ve Merkezi Idempotency Service
+
+**Durum:** ActivityLogConsumer'da race condition sorunu vardı ve her consumer için idempotency mantığı tekrar yazılıyordu (kod tekrarı, SOLID ihlali).
+**Yapılan İşlem:**
+
+- **Merkezi Idempotency Service:**
+
+  - `IIdempotencyService` interface oluşturuldu
+  - `IdempotencyService` implementasyonu eklendi (Redis + DB kontrolü)
+  - Redis optimistic lock ile race condition önlendi
+
+- **MassTransit Consumer Filter:**
+
+  - `IdempotencyFilter<TMessage>` oluşturuldu
+  - Consumer'lara mesaj göndermeden önce idempotency kontrolü yapıyor
+  - Yeni consumer'lar için sadece filter eklemek yeterli
+
+- **ActivityLogConsumer Basitleştirme:**
+
+  - Idempotency mantığı kaldırıldı (~100 satır kod azaldı)
+  - Sadece business logic kaldı
+  - Filter tarafından otomatik idempotency kontrolü
+
+- **SOLID ve Clean Code:**
+  - Single Responsibility: Her component tek sorumluluğa sahip
+  - DRY: Kod tekrarı önlendi
+  - Sürdürülebilirlik: Yeni consumer'lar için kolay genişletme
+
+**Avantajlar:**
+
+- ✅ Race condition sorunu çözüldü
+- ✅ Kod tekrarı önlendi (DRY)
+- ✅ SOLID prensipleri uygulandı
+- ✅ Sürdürülebilirlik artırıldı
+- ✅ Test edilebilirlik iyileştirildi
+
 ---
 
 ## 3. Mevcut Durum
@@ -143,15 +179,17 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 ### Tamamlanan Görevler
 
-| ID       | Görev                             | Tarih      | Durum                                          |
-| -------- | --------------------------------- | ---------- | ---------------------------------------------- |
-| SEC-002  | Domain katmanı temizliği          | 28.11.2025 | ✅ Tamamlandı (EF Core kaldırıldı)             |
-| PERF-003 | N+1 Sorunu                        | 28.11.2025 | ✅ Tamamlandı (UserRepository optimize edildi) |
-| ARCH-003 | Extension Metod Taşıma            | 28.11.2025 | ✅ Tamamlandı (Persistence'a taşındı)          |
-| FEAT-001 | Ollama AI Entegrasyonu            | 30.11.2025 | ✅ Tamamlandı (Best practices ile)             |
-| ARCH-004 | Models Klasör Yapısı              | 30.11.2025 | ✅ Tamamlandı (Separation of Concerns)         |
-| FEAT-002 | OpenTelemetry/Jaeger Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Trace görselleştirme)           |
-| FEAT-003 | Serilog/Seq İyileştirmeleri       | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği)     |
+| ID       | Görev                              | Tarih      | Durum                                          |
+| -------- | ---------------------------------- | ---------- | ---------------------------------------------- |
+| SEC-002  | Domain katmanı temizliği           | 28.11.2025 | ✅ Tamamlandı (EF Core kaldırıldı)             |
+| PERF-003 | N+1 Sorunu                         | 28.11.2025 | ✅ Tamamlandı (UserRepository optimize edildi) |
+| ARCH-003 | Extension Metod Taşıma             | 28.11.2025 | ✅ Tamamlandı (Persistence'a taşındı)          |
+| FEAT-001 | Ollama AI Entegrasyonu             | 30.11.2025 | ✅ Tamamlandı (Best practices ile)             |
+| ARCH-004 | Models Klasör Yapısı               | 30.11.2025 | ✅ Tamamlandı (Separation of Concerns)         |
+| FEAT-002 | OpenTelemetry/Jaeger Entegrasyonu  | 30.11.2025 | ✅ Tamamlandı (Trace görselleştirme)           |
+| FEAT-003 | Serilog/Seq İyileştirmeleri        | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği)     |
+| FIX-001  | ActivityLogConsumer Race Condition | 02.12.2025 | ✅ Tamamlandı (Merkezi idempotency service)    |
+| ARCH-005 | Merkezi Idempotency Service        | 02.12.2025 | ✅ Tamamlandı (SOLID, Clean Code)              |
 
-> **Son Güncelleme:** 30 Kasım 2025
-> **Versiyon:** 1.4
+> **Son Güncelleme:** 2 Aralık 2025
+> **Versiyon:** 1.5

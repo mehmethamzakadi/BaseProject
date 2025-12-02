@@ -1,11 +1,15 @@
 using BaseProject.Application.Abstractions;
 using BaseProject.Application.Abstractions.Identity;
 using BaseProject.Application.Abstractions.Images;
+using BaseProject.Domain.Common.Utilities;
 using BaseProject.Domain.Constants;
 using BaseProject.Domain.Entities;
+using BaseProject.Domain.Events.IntegrationEvents;
+using BaseProject.Domain.Repositories;
 using BaseProject.Domain.Services;
 using BaseProject.Infrastructure.Authorization;
 using BaseProject.Infrastructure.Consumers;
+using BaseProject.Infrastructure.Consumers.Filters;
 using BaseProject.Infrastructure.Options;
 using BaseProject.Infrastructure.Services;
 using BaseProject.Infrastructure.Services.BackgroundServices.Outbox.Converters;
@@ -16,10 +20,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
 using Polly.Extensions.Http;
+using StackExchange.Redis;
 using System.Net;
 using System.Text;
 using TokenOptions = BaseProject.Application.Options.TokenOptions;
@@ -75,11 +81,16 @@ namespace BaseProject.Infrastructure
             var redisConnectionString = configuration.GetConnectionString("RedisCache");
             if (!string.IsNullOrWhiteSpace(redisConnectionString))
             {
+                // Redis cache için IDistributedCache register et
                 services.AddStackExchangeRedisCache(options =>
                 {
                     options.Configuration = redisConnectionString;
                     options.InstanceName = "BaseProject_";
                 });
+
+                // IConnectionMultiplexer'ı da register et (SETNX işlemleri için)
+                services.AddSingleton<IConnectionMultiplexer>(sp =>
+                    ConnectionMultiplexer.Connect(redisConnectionString));
             }
             else
             {
@@ -107,6 +118,24 @@ namespace BaseProject.Infrastructure
                     cfg.ReceiveEndpoint(EventConstants.ActivityLogQueue, endpointConfigurator =>
                     {
                         endpointConfigurator.ConfigureConsumer<ActivityLogConsumer>(context);
+
+                        // ✅ Idempotency filter ekle - mesaj tekrar işlemeyi önler
+                        // Not: IServiceProvider root provider'dan alınır, filter içinde scope oluşturulur
+                        var serviceProvider = context; // IBusRegistrationContext is IServiceProvider
+                        var scopeFactory = context.GetRequiredService<IServiceScopeFactory>();
+                        endpointConfigurator.UseFilter(new IdempotencyFilter<ActivityLogCreatedIntegrationEvent>(
+                            serviceProvider,
+                            context.GetRequiredService<ILogger<IdempotencyFilter<ActivityLogCreatedIntegrationEvent>>>(),
+                            keyPrefix: "idempotency:activitylog:",
+                            fallbackIdGenerator: msg => GuidHelper.GenerateDeterministicGuid($"{msg.EntityId}_{msg.Timestamp:O}_{msg.ActivityType}"),
+                            existsCheck: async (id, ct) =>
+                            {
+                                // existsCheck içinde de scope oluşturulmalı
+                                using var scope = scopeFactory.CreateScope();
+                                var repo = scope.ServiceProvider.GetRequiredService<IActivityLogRepository>();
+                                return await repo.ExistsByIdAsync(id, ct);
+                            }
+                        ));
 
                         // Retry configuration
                         endpointConfigurator.UseMessageRetry(retryConfigurator =>
@@ -144,6 +173,7 @@ namespace BaseProject.Infrastructure
             }
 
             services.AddSingleton<ICacheService, RedisCacheService>();
+            services.AddScoped<IIdempotencyService, IdempotencyService>();
             services.AddTransient<ITokenService, JwtTokenService>();
             services.AddTransient<IMailService, MailService>();
             services.AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>();
@@ -151,18 +181,18 @@ namespace BaseProject.Infrastructure
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IImageStorageService, ImageStorageService>();
             services.AddScoped<IUserDomainService, Domain.Services.UserDomainService>();
-            
+
             // Ollama AI Service - Best practices: IHttpClientFactory + Polly retry policy
             var ollamaOptions = configuration.GetSection(Options.OllamaOptions.SectionName).Get<Options.OllamaOptions>()
                 ?? throw new InvalidOperationException("Ollama ayarları yapılandırılmalıdır.");
-            
+
             services.AddHttpClient("OllamaClient", client =>
             {
                 client.BaseAddress = new Uri(ollamaOptions.Endpoint);
                 client.Timeout = TimeSpan.FromMinutes(ollamaOptions.TimeoutMinutes);
             })
             .AddPolicyHandler(GetRetryPolicy(ollamaOptions));
-            
+
             services.AddScoped<IAiService, AiService>();
 
             // Authorization

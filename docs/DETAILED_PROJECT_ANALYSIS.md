@@ -716,6 +716,91 @@ src/BaseProject.API/
 
 ---
 
+---
+
+## 13. Yeni Özellikler (v2.4)
+
+### 13.1 ✅ Merkezi Idempotency Service ve Consumer Filter
+
+**Özellik:** Consumer'larda mesaj tekrar işlemeyi önlemek için merkezi idempotency servisi ve MassTransit filter eklendi.
+
+**Implementasyon Detayları:**
+
+#### Backend
+
+- **IIdempotencyService:** Idempotency kontrolü için merkezi interface
+  - `CheckAndAcquireLockAsync`: Redis + DB kontrolü ile lock alma
+  - `MarkAsProcessedAsync`: İşlem sonrası işaretleme
+- **IdempotencyService:** Redis cache ve database kontrolü ile implementasyon
+  - Redis optimistic lock (SETNX) ile race condition önleme
+  - Database fallback kontrolü
+  - Cache warming mekanizması
+- **IdempotencyFilter<TMessage>:** MassTransit consumer filter
+  - Consumer'lara mesaj göndermeden önce idempotency kontrolü
+  - Başarılı işlem sonrası otomatik işaretleme
+  - Yeni consumer'lar için sadece filter eklemek yeterli
+
+#### Consumer Basitleştirme
+
+- **ActivityLogConsumer:** Idempotency mantığı kaldırıldı (~100 satır kod azaldı)
+  - Sadece business logic kaldı
+  - Filter tarafından otomatik idempotency kontrolü
+  - Okunabilirlik ve bakım kolaylığı artırıldı
+
+**Best Practices:**
+
+- ✅ SOLID Prensipleri (Single Responsibility, Open/Closed, Dependency Inversion)
+- ✅ DRY (Don't Repeat Yourself) - Kod tekrarı önlendi (GuidHelper ile merkezi utility)
+- ✅ Clean Code - Consumer'lar sadece business logic'e odaklanır
+- ✅ Sürdürülebilirlik - Yeni consumer'lar için kolay genişletme
+- ✅ Test edilebilirlik - Her component ayrı test edilebilir
+- ✅ Utility metodları merkezi (Domain katmanında, bağımlılık yok)
+
+**Dosya Yapısı:**
+
+```
+src/BaseProject.Application/Abstractions/
+└── IIdempotencyService.cs (yeni - merkezi interface)
+
+src/BaseProject.Domain/Common/Utilities/
+└── GuidHelper.cs (yeni - deterministic Guid utility, kod tekrarını önler)
+
+src/BaseProject.Infrastructure/
+├── Services/
+│   └── IdempotencyService.cs (yeni - implementasyon)
+└── Consumers/
+    ├── Filters/
+    │   └── IdempotencyFilter.cs (yeni - MassTransit filter)
+    └── ActivityLogConsumer.cs (güncellendi - basitleştirildi)
+```
+
+**Kullanım Örneği:**
+
+```csharp
+// InfrastructureServicesRegistration'da:
+endpointConfigurator.UseFilter(new IdempotencyFilter<ActivityLogCreatedIntegrationEvent>(
+    context.GetRequiredService<IIdempotencyService>(),
+    context.GetRequiredService<ILogger<IdempotencyFilter<ActivityLogCreatedIntegrationEvent>>>(),
+    keyPrefix: "idempotency:activitylog:",
+    fallbackIdGenerator: msg => GenerateDeterministicGuid($"{msg.EntityId}_{msg.Timestamp:O}_{msg.ActivityType}"),
+    existsCheck: async (id, ct) => await repo.ExistsByIdAsync(id, ct)
+));
+
+// Consumer'da sadece business logic:
+public class ActivityLogConsumer : IConsumer<ActivityLogCreatedIntegrationEvent>
+{
+    public async Task Consume(ConsumeContext<ActivityLogCreatedIntegrationEvent> context)
+    {
+        // Idempotency otomatik - sadece business logic!
+        var activityLog = new ActivityLog { /* ... */ };
+        await _repository.AddAsync(activityLog);
+        await _unitOfWork.SaveChangesAsync();
+    }
+}
+```
+
+---
+
 **Rapor Hazırlayan:** AI Code Reviewer  
-**Tarih:** 30 Kasım 2025  
-**Versiyon:** 2.3
+**Tarih:** 2 Aralık 2025  
+**Versiyon:** 2.4

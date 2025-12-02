@@ -48,6 +48,10 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 - 🤖 **AI-Powered Features** - Ollama (Qwen 2.5:7b) ile yapay zeka destekli özellikler
   - AI ile kategori açıklaması üretme
 - 🔄 **Resilience Patterns** - Polly retry policy ile dayanıklı HTTP istekleri
+- 🔐 **Merkezi Idempotency Service** - Consumer'larda mesaj tekrar işlemeyi önlemek için merkezi servis
+  - MassTransit Consumer Filter ile otomatik idempotency kontrolü
+  - Redis optimistic lock ile race condition önleme
+  - SOLID ve Clean Code prensiplerine uygun
 
 ### Frontend
 
@@ -599,7 +603,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## 📞 İletişim
 
-- **Proje Sahibi:** Mehmet Hamza Kadi
+- **Proje Sahibi:** Mehmet Hamzakadi
 - **GitHub:** [@mehmethamzakadi](https://github.com/mehmethamzakadi)
 
 ---

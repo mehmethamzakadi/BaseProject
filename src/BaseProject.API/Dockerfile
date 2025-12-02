@@ -43,10 +43,10 @@ COPY --from=publish /app/publish .
 USER root
 # Klasörü oluştur ve sahipliğini .NET'in kullandığı kullanıcıya (app) ver
 RUN mkdir -p /app/wwwroot/uploads && \
-    chown -R $APP_UID:$APP_UID /app/wwwroot/uploads
+    chown -R app:app /app/wwwroot/uploads
 
 # Tekrar güvenli kullanıcıya dön
-USER $APP_UID
+USER app
 # --- EKLEMEN GEREKEN KISIM BİTİŞ ---
 
 
