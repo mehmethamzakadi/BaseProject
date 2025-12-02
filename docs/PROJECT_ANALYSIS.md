@@ -21,8 +21,8 @@
 BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Performans Sorunları (N+1)** ve **Bağımlılık Sorunları** başarıyla giderilmiştir. Özellikle Domain katmanı artık tamamen saf (pure) hale getirilmiş ve dış kütüphane bağımlılıklarından arındırılmıştır.
 
 **Yeni Özellikler:**
+
 - **Yapay Zeka Destekli İçerik Üretme**: Ollama (Qwen 2.5:7b) kullanılarak kategori açıklamaları otomatik olarak üretilebilmektedir.
-- **Dashboard AI İçgörüleri**: Sistem istatistiklerini ve aktivite loglarını analiz ederek trendler, uyarılar ve öneriler üreten AI destekli özellik. Permission bazlı erişim kontrolü ile sadece yetkili kullanıcılar kullanabilir.
 - **OpenTelemetry ve Jaeger Entegrasyonu**: Dağıtık sistem takibi için OpenTelemetry altyapısı kuruldu ve Jaeger ile trace görselleştirme eklendi. HTTP Request, EF Core sorguları ve MassTransit (RabbitMQ) mesajları otomatik olarak trace edilmektedir.
 - **Serilog ve Seq İyileştirmeleri**: Docker ve Local ortam desteği eklendi, log seviyesi optimizasyonu yapıldı (Development: Information, Production: Warning).
 
@@ -34,6 +34,7 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 **Durum:** `BaseProject.Domain` projesi `Microsoft.EntityFrameworkCore` ve `System.Linq.Dynamic.Core` gibi infrastructure teknolojilerine bağımlıydı.
 **Yapılan İşlem:**
+
 - `IIncludableQueryable` (EF Core spesifik) yerine `IQueryable` (Framework bağımsız) yapısına geçildi.
 - Extension metodlar (`ToPaginateAsync`, `ToDynamic`) Domain katmanından `Persistence` katmanına taşındı.
 - `BaseProject.Domain.csproj` dosyasından tüm dış paket referansları silindi.
@@ -47,6 +48,7 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 **Durum:** Extension metodlar yanlış katmandaydı.
 **Yapılan İşlem:**
+
 - `IQueryablePaginateExtensions` -> `BaseProject.Persistence.Extensions` altına taşındı.
 - `IQueryableDynamicFilterExtensions` -> `BaseProject.Persistence.Extensions` altına taşındı.
 
@@ -54,6 +56,7 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 **Durum:** Kategori açıklamaları manuel olarak giriliyordu.
 **Yapılan İşlem:**
+
 - Ollama (Qwen 2.5:7b) entegrasyonu eklendi
 - `IAiService` interface'i Domain katmanına eklendi
 - `AiService` implementasyonu Infrastructure katmanına eklendi
@@ -67,22 +70,11 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 - Docker Compose'a Ollama servisi eklendi
 - Models klasör yapısı oluşturuldu (Separation of Concerns)
 
-### 2.5 ✅ Dashboard AI İçgörüleri Özelliği
-
-**Durum:** Dashboard'da sadece temel istatistikler görüntüleniyordu.
-**Yapılan İşlem:**
-- Dashboard için AI destekli içgörüler, trendler ve öneriler özelliği eklendi
-- `Dashboard.AIInsights` permission'ı eklendi (sadece yetkili kullanıcılar erişebilir)
-- Manuel buton ile tetikleme (otomatik güncelleme yok, maliyet kontrolü için)
-- Frontend'de AI Insights Card component'i eklendi
-- Permission bazlı erişim kontrolü (sadece admin/yetkili kullanıcılar görebilir)
-- JSON parsing ile structured AI response handling
-- Graceful degradation (AI servisi down olduğunda uygulama çalışmaya devam eder)
-
-### 2.6 ✅ Docker Compose ve PermissionSeeder İyileştirmeleri
+### 2.5 ✅ Docker Compose ve PermissionSeeder İyileştirmeleri
 
 **Durum:** Docker Compose'da eksik environment variables ve PermissionSeeder'da duplicate key sorunu vardı.
 **Yapılan İşlem:**
+
 - OllamaOptions için eksik environment variables eklendi (TimeoutMinutes, RetryCount, RetryDelaySeconds)
 - Redis connection string düzeltildi (service adı uyumsuzluğu)
 - Ollama dependency opsiyonel hale getirildi (API Ollama olmadan da çalışabilir)
@@ -94,6 +86,7 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 **Durum:** OpenTelemetry altyapısı kurulmuştu ancak trace'leri görselleştirebilecek bir arayüz yoktu.
 **Yapılan İşlem:**
+
 - Jaeger servisi docker-compose.local.yml'e eklendi (jaegertracing/all-in-one:latest)
 - Portlar: 16686 (UI), 4317 (OTLP gRPC), 4318 (OTLP HTTP)
 - OpenTelemetryConfiguration.cs'e OTLP exporter eklendi
@@ -106,8 +99,9 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 **Durum:** Seq arayüzüne erişilebiliyordu ancak log kayıtları görünmüyordu. Docker ve Local ortam ayrımı yapılmamıştı.
 **Yapılan İşlem:**
+
 - SerilogConfiguration.cs'de Docker ve Local ortam ayrımı yapıldı
-- Environment variable desteği eklendi (Serilog__SeqUrl, Serilog__SeqApiKey)
+- Environment variable desteği eklendi (Serilog**SeqUrl, Serilog**SeqApiKey)
 - Docker ortamında: http://seq:80, Local ortamda: http://localhost:5341
 - Seq sink koşullu eklendi (Seq URL null ise eklenmiyor)
 - Log seviyesi optimizasyonu:
@@ -122,11 +116,11 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 ## 3. Mevcut Durum
 
-| Katman | Durum | Not |
-|--------|-------|-----|
-| Domain | ✅ Mükemmel | Hiçbir dış bağımlılık yok, saf C# |
-| Application | ✅ İyi | Business kuralları izole |
-| Persistence | ✅ İyi | EF Core ve DB işlemleri burada encapsule edildi |
+| Katman         | Durum       | Not                                                             |
+| -------------- | ----------- | --------------------------------------------------------------- |
+| Domain         | ✅ Mükemmel | Hiçbir dış bağımlılık yok, saf C#                               |
+| Application    | ✅ İyi      | Business kuralları izole                                        |
+| Persistence    | ✅ İyi      | EF Core ve DB işlemleri burada encapsule edildi                 |
 | Infrastructure | ✅ Mükemmel | 3. parti servisler izole, AI servisi best practices ile eklendi |
 
 ---
@@ -149,15 +143,15 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 ### Tamamlanan Görevler
 
-| ID | Görev | Tarih | Durum |
-|----|-------|-------|-------|
-| SEC-002 | Domain katmanı temizliği | 28.11.2025 | ✅ Tamamlandı (EF Core kaldırıldı) |
-| PERF-003 | N+1 Sorunu | 28.11.2025 | ✅ Tamamlandı (UserRepository optimize edildi) |
-| ARCH-003 | Extension Metod Taşıma | 28.11.2025 | ✅ Tamamlandı (Persistence'a taşındı) |
-| FEAT-001 | Ollama AI Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Best practices ile) |
-| ARCH-004 | Models Klasör Yapısı | 30.11.2025 | ✅ Tamamlandı (Separation of Concerns) |
-| FEAT-002 | OpenTelemetry/Jaeger Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Trace görselleştirme) |
-| FEAT-003 | Serilog/Seq İyileştirmeleri | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği) |
+| ID       | Görev                             | Tarih      | Durum                                          |
+| -------- | --------------------------------- | ---------- | ---------------------------------------------- |
+| SEC-002  | Domain katmanı temizliği          | 28.11.2025 | ✅ Tamamlandı (EF Core kaldırıldı)             |
+| PERF-003 | N+1 Sorunu                        | 28.11.2025 | ✅ Tamamlandı (UserRepository optimize edildi) |
+| ARCH-003 | Extension Metod Taşıma            | 28.11.2025 | ✅ Tamamlandı (Persistence'a taşındı)          |
+| FEAT-001 | Ollama AI Entegrasyonu            | 30.11.2025 | ✅ Tamamlandı (Best practices ile)             |
+| ARCH-004 | Models Klasör Yapısı              | 30.11.2025 | ✅ Tamamlandı (Separation of Concerns)         |
+| FEAT-002 | OpenTelemetry/Jaeger Entegrasyonu | 30.11.2025 | ✅ Tamamlandı (Trace görselleştirme)           |
+| FEAT-003 | Serilog/Seq İyileştirmeleri       | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği)     |
 
 > **Son Güncelleme:** 30 Kasım 2025
 > **Versiyon:** 1.4

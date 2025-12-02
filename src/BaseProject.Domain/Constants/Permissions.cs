@@ -8,7 +8,6 @@ public static class Permissions
 {
     // Dashboard Permissions
     public const string DashboardView = "Dashboard.View";
-    public const string DashboardAIInsights = "Dashboard.AIInsights";
 
     // User Management Permissions
     public const string UsersCreate = "Users.Create";
@@ -46,7 +45,7 @@ public static class Permissions
         return new List<string>
         {
             // Dashboard
-            DashboardView, DashboardAIInsights,
+            DashboardView,
 
             // Users
             UsersCreate, UsersRead, UsersUpdate, UsersDelete, UsersViewAll,

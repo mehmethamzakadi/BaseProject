@@ -12,7 +12,7 @@ namespace BaseProject.Persistence.DatabaseInitializer.Seeders;
 /// </summary>
 public class PermissionSeeder : BaseSeeder
 {
-    public PermissionSeeder(BaseProjectDbContext context, ILogger<PermissionSeeder> logger) 
+    public PermissionSeeder(BaseProjectDbContext context, ILogger<PermissionSeeder> logger)
         : base(context, logger)
     {
     }
@@ -23,26 +23,26 @@ public class PermissionSeeder : BaseSeeder
     protected override async Task SeedDataAsync(CancellationToken cancellationToken)
     {
         var createdDate = new DateTime(2025, 10, 23, 7, 0, 0, DateTimeKind.Utc);
-        
+
         var allPermissionNames = Permissions.GetAllPermissions();
-        
+
         // Mevcut permission'ları kontrol et
         var existingPermissions = await Context.Permissions
             .Where(p => !p.IsDeleted)
             .Select(p => new { p.NormalizedName, p.Id })
             .ToListAsync(cancellationToken);
-        
+
         var existingNormalizedNames = existingPermissions
             .Select(p => p.NormalizedName)
             .Where(n => n != null)
             .ToHashSet();
-        
+
         var existingIds = existingPermissions
             .Select(p => p.Id)
             .ToHashSet();
 
         var permissionsToAdd = new List<Permission>();
-        
+
         // Mevcut permission sayısına göre index'i başlat (yeni permission'lar için)
         var permissionIndex = existingPermissions.Count;
 
@@ -50,7 +50,7 @@ public class PermissionSeeder : BaseSeeder
         {
             var permissionName = allPermissionNames[index];
             var normalizedName = permissionName.ToUpperInvariant();
-            
+
             // NormalizedName'e göre kontrol et - zaten varsa atla
             if (existingNormalizedNames.Contains(normalizedName))
             {
@@ -110,7 +110,6 @@ public class PermissionSeeder : BaseSeeder
         return permissionName switch
         {
             Permissions.DashboardView => "Admin paneli dashboard'una erişim yetkisi",
-            Permissions.DashboardAIInsights => "Dashboard AI içgörüleri görüntüleme yetkisi",
             Permissions.UsersCreate => "Yeni kullanıcı oluşturma yetkisi",
             Permissions.UsersRead => "Kullanıcı bilgilerini görüntüleme yetkisi",
             Permissions.UsersUpdate => "Kullanıcı bilgilerini güncelleme yetkisi",

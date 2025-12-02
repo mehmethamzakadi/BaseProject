@@ -1,5 +1,4 @@
-import api from '../../lib/axios';
-import { AiInsightsResponse } from './types';
+import api from "../../lib/axios";
 
 export interface StatisticsResponse {
   totalCategories: number;
@@ -16,16 +15,15 @@ export interface ActivityLogItem {
 }
 
 export async function fetchStatistics(): Promise<StatisticsResponse> {
-  const response = await api.get<StatisticsResponse>('/dashboards/statistics');
+  const response = await api.get<StatisticsResponse>("/dashboards/statistics");
   return response.data;
 }
 
-export async function fetchRecentActivities(count: number = 10): Promise<ActivityLogItem[]> {
-  const response = await api.get<{ activities: ActivityLogItem[] }>(`/dashboards/activities?count=${count}`);
+export async function fetchRecentActivities(
+  count: number = 10
+): Promise<ActivityLogItem[]> {
+  const response = await api.get<{ activities: ActivityLogItem[] }>(
+    `/dashboards/activities?count=${count}`
+  );
   return response.data.activities || [];
-}
-
-export async function fetchAiInsights(): Promise<AiInsightsResponse> {
-  const response = await api.get<AiInsightsResponse>('/dashboards/ai-insights');
-  return response.data;
 }

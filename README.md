@@ -28,6 +28,7 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 ## ✨ Özellikler
 
 ### Backend
+
 - 🏗️ **Clean Architecture** - Katmanlı mimari ile sürdürülebilir kod
 - 📦 **DDD (Domain-Driven Design)** - Aggregate Root, Value Objects, Domain Events
 - 🔄 **CQRS Pattern** - MediatR ile Command/Query ayrımı
@@ -46,10 +47,10 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
   - **Jaeger Integration** - Trace görselleştirme arayüzü
 - 🤖 **AI-Powered Features** - Ollama (Qwen 2.5:7b) ile yapay zeka destekli özellikler
   - AI ile kategori açıklaması üretme
-  - Dashboard AI içgörüleri ve öneriler (permission bazlı)
 - 🔄 **Resilience Patterns** - Polly retry policy ile dayanıklı HTTP istekleri
 
 ### Frontend
+
 - ⚛️ **React 18** - Modern UI framework
 - 📘 **TypeScript** - Tip güvenli geliştirme
 - 🎨 **Tailwind CSS** - Utility-first CSS framework
@@ -59,6 +60,7 @@ BaseProject, **Clean Architecture** ve **Domain-Driven Design (DDD)** prensipler
 - 🚀 **Vite** - Hızlı build tool
 
 ### DevOps
+
 - 🐳 **Docker & Docker Compose** - Container orchestration
 - 🔄 **CI/CD Ready** - Pipeline hazır yapı
 - 📈 **Seq Integration** - Merkezi log yönetimi ve analizi
@@ -204,6 +206,7 @@ docker compose -f docker-compose.local.yml ps
 ```
 
 **Erişim URL'leri:**
+
 - **Frontend (React Client):** http://localhost:5173
 - **Backend API:** http://localhost:6060
 - **API Dokümantasyonu (Scalar):** http://localhost:6060/scalar/v1
@@ -262,6 +265,7 @@ npm run dev
 Proje kök dizininde ortam bazlı `.env` dosyaları kullanılır:
 
 #### Development Ortamı (`.env.development`)
+
 ```bash
 # Development için hazır değerlerle gelir
 cp .env.example .env.development
@@ -269,6 +273,7 @@ cp .env.example .env.development
 ```
 
 #### Production Ortamı (`.env.production`)
+
 ```bash
 # Production için .env.production dosyasını oluşturun
 cp .env.example .env.production
@@ -277,41 +282,41 @@ cp .env.example .env.production
 
 #### Environment Variables Listesi
 
-| Değişken | Açıklama | Development | Production |
-|----------|----------|-------------|------------|
-| `POSTGRES_DB` | Veritabanı adı | `BaseProjectDb` | `BaseProjectDb` |
-| `POSTGRES_USER` | DB kullanıcı adı | `postgres` | `baseproject_user` |
-| `POSTGRES_PASSWORD` | DB şifresi | `postgres` | **Güçlü şifre** |
-| `RABBITMQ_DEFAULT_USER` | RabbitMQ kullanıcı | `baseproject` | `baseproject` |
-| `RABBITMQ_DEFAULT_PASS` | RabbitMQ şifre | `supersecret` | **Güçlü şifre** |
-| `REDIS_PASSWORD` | Redis şifre | (boş) | **Güçlü şifre** |
-| `SEQ_ADMIN_PASSWORD` | Seq admin şifre | `Admin123!` | **Güçlü şifre** |
-| `TOKEN_SECURITY_KEY` | JWT secret key | `DevSecretKey...` | **32+ karakter** |
-| `APP_URL` | Uygulama URL | `http://localhost:5173` | `https://yourdomain.com` |
+| Değişken                | Açıklama           | Development             | Production               |
+| ----------------------- | ------------------ | ----------------------- | ------------------------ |
+| `POSTGRES_DB`           | Veritabanı adı     | `BaseProjectDb`         | `BaseProjectDb`          |
+| `POSTGRES_USER`         | DB kullanıcı adı   | `postgres`              | `baseproject_user`       |
+| `POSTGRES_PASSWORD`     | DB şifresi         | `postgres`              | **Güçlü şifre**          |
+| `RABBITMQ_DEFAULT_USER` | RabbitMQ kullanıcı | `baseproject`           | `baseproject`            |
+| `RABBITMQ_DEFAULT_PASS` | RabbitMQ şifre     | `supersecret`           | **Güçlü şifre**          |
+| `REDIS_PASSWORD`        | Redis şifre        | (boş)                   | **Güçlü şifre**          |
+| `SEQ_ADMIN_PASSWORD`    | Seq admin şifre    | `Admin123!`             | **Güçlü şifre**          |
+| `TOKEN_SECURITY_KEY`    | JWT secret key     | `DevSecretKey...`       | **32+ karakter**         |
+| `APP_URL`               | Uygulama URL       | `http://localhost:5173` | `https://yourdomain.com` |
 
 **ÖNEMLİ:** Production ortamında mutlaka güçlü şifreler ve secret key'ler kullanın!
 
 #### .NET Environment Variables
 
-| Değişken | Açıklama | Varsayılan |
-|----------|----------|------------|
-| `ASPNETCORE_ENVIRONMENT` | Ortam | `Development` |
-| `ConnectionStrings__BaseProjectPostgreConnectionString` | PostgreSQL bağlantısı | - |
-| `ConnectionStrings__RedisCache` | Redis bağlantısı | - |
-| `TokenOptions__SecurityKey` | JWT secret key | - |
-| `RabbitMQOptions__HostName` | RabbitMQ host | `localhost` |
-| `RabbitMQOptions__UserName` | RabbitMQ kullanıcı | `baseproject` |
-| `RabbitMQOptions__Password` | RabbitMQ şifre | - |
-| `OllamaOptions__Endpoint` | Ollama API endpoint | `http://localhost:11434` |
-| `OllamaOptions__ModelId` | Ollama model ID | `qwen2.5:7b` |
-| `OllamaOptions__TimeoutMinutes` | HTTP timeout (dakika) | `2` |
-| `OllamaOptions__RetryCount` | Retry sayısı | `3` |
-| `OllamaOptions__RetryDelaySeconds` | Retry gecikmesi (saniye) | `2` |
-| `Serilog__SeqUrl` | Seq log server URL | `http://seq:80` (Docker) / `http://localhost:5341` (Local) |
-| `Serilog__SeqApiKey` | Seq API key (opsiyonel) | - |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry OTLP endpoint | `http://jaeger:4317` (Docker) / `http://localhost:4317` (Local) |
-| `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP protokol (grpc/http) | `grpc` |
-| `VITE_API_URL` | Frontend API URL (build-time) | `http://localhost:6060` (Docker) / `http://localhost:5285` (Local) |
+| Değişken                                                | Açıklama                      | Varsayılan                                                         |
+| ------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `ASPNETCORE_ENVIRONMENT`                                | Ortam                         | `Development`                                                      |
+| `ConnectionStrings__BaseProjectPostgreConnectionString` | PostgreSQL bağlantısı         | -                                                                  |
+| `ConnectionStrings__RedisCache`                         | Redis bağlantısı              | -                                                                  |
+| `TokenOptions__SecurityKey`                             | JWT secret key                | -                                                                  |
+| `RabbitMQOptions__HostName`                             | RabbitMQ host                 | `localhost`                                                        |
+| `RabbitMQOptions__UserName`                             | RabbitMQ kullanıcı            | `baseproject`                                                      |
+| `RabbitMQOptions__Password`                             | RabbitMQ şifre                | -                                                                  |
+| `OllamaOptions__Endpoint`                               | Ollama API endpoint           | `http://localhost:11434`                                           |
+| `OllamaOptions__ModelId`                                | Ollama model ID               | `qwen2.5:7b`                                                       |
+| `OllamaOptions__TimeoutMinutes`                         | HTTP timeout (dakika)         | `2`                                                                |
+| `OllamaOptions__RetryCount`                             | Retry sayısı                  | `3`                                                                |
+| `OllamaOptions__RetryDelaySeconds`                      | Retry gecikmesi (saniye)      | `2`                                                                |
+| `Serilog__SeqUrl`                                       | Seq log server URL            | `http://seq:80` (Docker) / `http://localhost:5341` (Local)         |
+| `Serilog__SeqApiKey`                                    | Seq API key (opsiyonel)       | -                                                                  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                           | OpenTelemetry OTLP endpoint   | `http://jaeger:4317` (Docker) / `http://localhost:4317` (Local)    |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`                           | OTLP protokol (grpc/http)     | `grpc`                                                             |
+| `VITE_API_URL`                                          | Frontend API URL (build-time) | `http://localhost:6060` (Docker) / `http://localhost:5285` (Local) |
 
 ---
 
@@ -327,22 +332,22 @@ http://localhost:5000/scalar/v1
 
 ### Ana Endpoint'ler
 
-| Endpoint | Method | Açıklama | Auth |
-|----------|--------|----------|------|
-| `/api/auth/login` | POST | Kullanıcı girişi | ❌ |
-| `/api/auth/register` | POST | Kullanıcı kaydı | ❌ |
-| `/api/auth/refresh-token` | POST | Token yenileme | ❌ |
-| `/api/category` | GET | Kategori listesi | ❌ |
-| `/api/category/generate-description` | GET | AI ile kategori açıklaması üret | ✅ |
-| `/api/user` | GET | Kullanıcı listesi | ✅ |
-| `/api/role` | GET | Rol listesi | ✅ |
-| `/api/Dashboards/statistics` | GET | Dashboard istatistikleri | ✅ |
-| `/api/Dashboards/ai-insights` | GET | Dashboard AI içgörüleri | ✅ (Dashboard.AIInsights) |
-| `/api/ActivityLogs/search` | POST | Aktivite logları | ✅ |
+| Endpoint                             | Method | Açıklama                        | Auth |
+| ------------------------------------ | ------ | ------------------------------- | ---- |
+| `/api/auth/login`                    | POST   | Kullanıcı girişi                | ❌   |
+| `/api/auth/register`                 | POST   | Kullanıcı kaydı                 | ❌   |
+| `/api/auth/refresh-token`            | POST   | Token yenileme                  | ❌   |
+| `/api/category`                      | GET    | Kategori listesi                | ❌   |
+| `/api/category/generate-description` | GET    | AI ile kategori açıklaması üret | ✅   |
+| `/api/user`                          | GET    | Kullanıcı listesi               | ✅   |
+| `/api/role`                          | GET    | Rol listesi                     | ✅   |
+| `/api/Dashboards/statistics`         | GET    | Dashboard istatistikleri        | ✅   |
+| `/api/ActivityLogs/search`           | POST   | Aktivite logları                | ✅   |
 
 ### Örnek İstekler
 
 #### Login
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -350,6 +355,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 ```
 
 #### Kategori Oluşturma
+
 ```bash
 curl -X POST http://localhost:5000/api/Category \
   -H "Content-Type: application/json" \
@@ -361,18 +367,11 @@ curl -X POST http://localhost:5000/api/Category \
 ```
 
 #### AI ile Kategori Açıklaması Üretme
+
 ```bash
 curl -X GET "http://localhost:5000/api/category/generate-description?categoryName=Teknoloji" \
   -H "Authorization: Bearer {token}"
 ```
-
-#### Dashboard AI İçgörüleri
-```bash
-curl -X GET "http://localhost:5000/api/dashboards/ai-insights" \
-  -H "Authorization: Bearer {token}"
-```
-
-**Not:** Bu endpoint sadece `Dashboard.AIInsights` permission'ı olan kullanıcılar tarafından kullanılabilir.
 
 ---
 
@@ -493,6 +492,7 @@ http://localhost:5341
 Varsayılan şifre: `Admin123!`
 
 **Not:** Docker ortamında API otomatik olarak Seq'e log gönderir. Local development için Seq'u Docker'da çalıştırın:
+
 ```bash
 docker run -d -p 5341:80 -e ACCEPT_EULA=Y datalust/seq:latest
 ```
@@ -506,6 +506,7 @@ http://localhost:16686
 OpenTelemetry trace'lerini görselleştirmek için Jaeger UI kullanılır. API'den gelen tüm HTTP istekleri, EF Core sorguları ve RabbitMQ mesajları otomatik olarak trace edilir.
 
 **Özellikler:**
+
 - HTTP Request/Response tracing
 - EF Core query tracing
 - MassTransit (RabbitMQ) message tracing
@@ -513,9 +514,11 @@ OpenTelemetry trace'lerini görselleştirmek için Jaeger UI kullanılır. API'd
 - Service map ve dependency görselleştirme
 
 **Docker Ortamında:**
+
 - Otomatik olarak `http://jaeger:4317` üzerinden trace gönderilir
 
 **Local Development:**
+
 - Jaeger'ı Docker'da çalıştırın: `docker run -d -p 16686:16686 -p 4317:4317 -p 4318:4318 -e COLLECTOR_OTLP_ENABLED=true jaegertracing/all-in-one:latest`
 - API `http://localhost:4317` üzerinden trace gönderir
 

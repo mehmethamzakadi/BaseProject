@@ -24,7 +24,7 @@
 
 ### Genel Durum: ⭐⭐⭐⭐⭐ (5/5)
 
-BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. **Yapay Zeka Destekli Özellikler** (kategori açıklaması üretme ve Dashboard AI içgörüleri) best practices ile eklenmiş, **OpenTelemetry/Jaeger entegrasyonu** ile observability altyapısı kurulmuş ve **Serilog/Seq iyileştirmeleri** ile log yönetimi optimize edilmiştir. Proje artık daha olgun bir seviyeye ulaşmıştır.
+BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak uygun bir yapıda. **Yapay Zeka Destekli Özellikler** (kategori açıklaması üretme) best practices ile eklenmiş, **OpenTelemetry/Jaeger entegrasyonu** ile observability altyapısı kurulmuş ve **Serilog/Seq iyileştirmeleri** ile log yönetimi optimize edilmiştir. Proje artık daha olgun bir seviyeye ulaşmıştır.
 
 ### Güçlü Yönler ✅
 
@@ -40,7 +40,6 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 - ✅ Exception handling middleware mevcut
 - ✅ **Yapay Zeka Entegrasyonu** - Ollama (Qwen 2.5:7b) ile AI destekli özellikler
   - Kategori açıklaması üretme
-  - Dashboard AI içgörüleri ve öneriler (permission bazlı)
 - ✅ **Best Practices** - IHttpClientFactory, Polly retry policy, structured logging
 - ✅ **Separation of Concerns** - Models klasör yapısı ile temiz kod organizasyonu
 - ✅ **Permission-Based AI Access** - AI özellikleri permission kontrolü ile korunuyor
@@ -63,13 +62,13 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 
 ### 2.1 Katman Yapısı
 
-| Katman | Durum | Not |
-|--------|-------|-----|
-| **Domain** | ✅ Mükemmel | Hiçbir dış bağımlılık yok, tamamen saf C# |
-| **Application** | ✅ İyi | Business logic izole, CQRS doğru uygulanmış |
-| **Persistence** | ✅ İyi | EF Core encapsule edilmiş, repository pattern doğru |
+| Katman             | Durum       | Not                                                             |
+| ------------------ | ----------- | --------------------------------------------------------------- |
+| **Domain**         | ✅ Mükemmel | Hiçbir dış bağımlılık yok, tamamen saf C#                       |
+| **Application**    | ✅ İyi      | Business logic izole, CQRS doğru uygulanmış                     |
+| **Persistence**    | ✅ İyi      | EF Core encapsule edilmiş, repository pattern doğru             |
 | **Infrastructure** | ✅ Mükemmel | 3. parti servisler izole, AI servisi best practices ile eklendi |
-| **API** | ✅ İyi | Controllers ince, logic Application'da |
+| **API**            | ✅ İyi      | Controllers ince, logic Application'da                          |
 
 ### 2.2 Design Patterns
 
@@ -90,6 +89,7 @@ BaseProject projesi **Clean Architecture** ve **DDD** prensiplerine genel olarak
 **Dosya:** `src/BaseProject.Persistence/Repositories/EfRepositoryBase.cs:62-65`
 
 **Sorun:**
+
 ```csharp
 public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, ...)
 {
@@ -99,12 +99,14 @@ public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, 
 ```
 
 **Etki:**
+
 - `BuildQueryable` içinde predicate zaten `Where` ile uygulanıyor
 - `FirstOrDefaultAsync` içinde tekrar predicate uygulanıyor
 - Gereksiz SQL WHERE clause tekrarı
 - Performans kaybı
 
 **Çözüm:**
+
 ```csharp
 public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, ...)
 {
@@ -122,6 +124,7 @@ public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, 
 **Dosya:** `src/BaseProject.Application/Features/Posts/EventHandlers/PostUpdatedEventHandler.cs:37-40`
 
 **Sorun:**
+
 ```csharp
 await _cacheService.Remove($"post:{domainEvent.PostId}"); // ❌ Hardcoded
 await _cacheService.Remove($"post:{domainEvent.PostId}:withdrafts"); // ❌ Hardcoded
@@ -130,11 +133,13 @@ await _cacheService.Remove("posts:list"); // ❌ Hardcoded
 ```
 
 **Etki:**
+
 - Cache key'ler merkezi yönetilmiyor
 - Cache key formatı değiştiğinde tüm handler'ları güncellemek gerekir
 - Tutarsızlık riski
 
 **Çözüm:**
+
 ```csharp
 await _cacheService.Remove(CacheKeys.Post(domainEvent.PostId));
 await _cacheService.Remove(CacheKeys.PostWithDrafts(domainEvent.PostId));
@@ -145,6 +150,7 @@ await _cacheService.Remove(CacheKeys.PostListVersion());
 **Öncelik:** 🟠 Orta
 
 **Etkilenen Dosyalar:**
+
 - `PostUpdatedEventHandler.cs`
 - `PostCreatedEventHandler.cs`
 - `PostDeletedEventHandler.cs`
@@ -162,6 +168,7 @@ await _cacheService.Remove(CacheKeys.PostListVersion());
 Connection string'den pooling parametreleri okunmuyor, sadece docker-compose'da tanımlı.
 
 **Etki:**
+
 - Development ortamında connection pool yapılandırması eksik olabilir
 - Production'da docker-compose üzerinden yönetiliyor ama appsettings'den okunmuyor
 
@@ -179,11 +186,13 @@ Connection string'den pooling parametrelerini oku veya NpgsqlDataSourceBuilder k
 #### ✅ İyi Yapılanlar
 
 1. **Projection Kullanımı**: Post listelerinde sadece gerekli alanlar çekiliyor
+
    ```csharp
    query.Select(p => new GetListPostResponse(...)) // ✅ Sadece gerekli alanlar
    ```
 
 2. **Index'ler**: Kritik sorgular için index'ler tanımlanmış
+
    - `IX_Posts_IsPublished_CategoryId_CreatedDate`
    - `IX_Comments_PostId_IsPublished`
    - `IX_UserRoles_UserId_RoleId`
@@ -196,10 +205,11 @@ Connection string'den pooling parametrelerini oku veya NpgsqlDataSourceBuilder k
 #### ⚠️ İyileştirilebilir
 
 1. **UserRepository.GetUsersAsync**: Include kullanımı
+
    ```csharp
    // Mevcut:
    .Include(u => u.UserRoles).ThenInclude(ur => ur.Role) // ⚠️ Tüm entity'ler yükleniyor
-   
+
    // Önerilen:
    .Select(u => new UserDto { ... }) // ✅ Projection kullan
    ```
@@ -213,6 +223,7 @@ Connection string'den pooling parametrelerini oku veya NpgsqlDataSourceBuilder k
 #### ✅ İyi Yapılanlar
 
 1. **Version-Based Cache Invalidation**: Çok akıllıca
+
    ```csharp
    CacheKeys.PostList(versionToken, pageIndex, pageSize)
    ```
@@ -252,12 +263,14 @@ Connection string'den pooling parametrelerini oku veya NpgsqlDataSourceBuilder k
 **Dosya:** Çeşitli yerler
 
 **Sorun:**
+
 ```csharp
 TimeSpan.FromHours(6) // ❌ Magic number
 MaxBatchSize(100) // ❌ Magic number
 ```
 
 **Çözüm:**
+
 ```csharp
 private static readonly TimeSpan SessionCleanupInterval = TimeSpan.FromHours(6);
 private const int MaxBatchSize = 100;
@@ -270,6 +283,7 @@ private const int MaxBatchSize = 100;
 **Dosya:** `PostUpdatedEventHandler.cs:37`
 
 **Sorun:**
+
 ```csharp
 $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 ```
@@ -322,11 +336,13 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 **Risk:** Yüksek trafikte connection pool tükenebilir.
 
 **Neden:**
+
 - Long-running transaction'lar
 - Connection leak riski (dispose eksikliği)
 - Pool size yeterli olmayabilir (100 max)
 
 **Çözüm:**
+
 1. Connection timeout'ları ekle
 2. Connection leak detection ekle
 3. Pool size'ı yüksek trafik için artır (200-300)
@@ -339,9 +355,11 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 **Risk:** Cache expire olduğunda aynı anda çok sayıda istek database'e gidebilir.
 
 **Mevcut Durum:**
+
 - Version-based invalidation var ama cache miss durumunda stampede olabilir
 
 **Çözüm:**
+
 1. Cache-aside pattern ile lock mekanizması ekle
 2. Cache warming stratejisi
 3. Stale-while-revalidate pattern
@@ -351,14 +369,17 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 ### 🟠 ORTA-004: N+1 Query Riskleri
 
 **Mevcut Durum:**
+
 - Çoğu yerde projection kullanılıyor ✅
 - Bazı Include kullanımları var ⚠️
 
 **Riskli Yerler:**
+
 - `UserRepository.GetUsersAsync` - Include kullanıyor
 - Bazı list query'lerde Include kullanımları
 
 **Çözüm:**
+
 - Include yerine projection kullan
 - Explicit loading için özel metodlar ekle
 
@@ -367,10 +388,12 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 ### 🟡 MINOR-003: Pagination Performance
 
 **Mevcut Durum:**
+
 - Offset-based pagination kullanılıyor
 - Büyük sayfalarda (örn: page 1000) performans düşebilir
 
 **Çözüm:**
+
 - Cursor-based pagination ekle (opsiyonel)
 - Veya mevcut yapıyı koru ama cache stratejisini iyileştir
 
@@ -443,19 +466,19 @@ $"post:{domainEvent.PostId}" // ⚠️ String interpolation
 
 ## 9. Öncelik Matrisi
 
-| ID | Sorun | Öncelik | Etki | Çaba | Süre | Durum |
-|----|-------|---------|------|------|------|-------|
-| KRİTİK-001 | EfRepositoryBase.GetAsync predicate | 🔴 Yüksek | Yüksek | Düşük | 30 dk | ✅ TAMAMLANDI |
-| KRİTİK-002 | Connection pool monitoring | 🔴 Yüksek | Yüksek | Orta | 2 saat | ⏳ Beklemede |
-| ORTA-001 | Event handler cache keys | 🟠 Orta | Orta | Orta | 2 saat | ✅ TAMAMLANDI |
-| ORTA-002 | Connection string pooling | 🟠 Orta | Orta | Düşük | 1 saat | ⏳ Beklemede |
-| ORTA-003 | Cache stampede prevention | 🟠 Orta | Orta | Yüksek | 1 gün | ⏳ Beklemede |
-| ORTA-004 | N+1 query optimization | 🟠 Orta | Orta | Orta | 4 saat | ⏳ Beklemede |
-| FIX-001 | PermissionSeeder duplicate key | 🔴 Yüksek | Yüksek | Düşük | 1 saat | ✅ TAMAMLANDI |
-| FIX-002 | Docker Compose env variables | 🟠 Orta | Orta | Düşük | 30 dk | ✅ TAMAMLANDI |
-| MINOR-001 | Magic numbers | 🟡 Düşük | Düşük | Düşük | 2 saat | ⏳ Beklemede |
-| MINOR-002 | String interpolation | 🟡 Düşük | Düşük | - | - | ⏳ Beklemede |
-| MINOR-003 | Pagination performance | 🟡 Düşük | Düşük | Yüksek | 2 gün | ⏳ Beklemede |
+| ID         | Sorun                               | Öncelik   | Etki   | Çaba   | Süre   | Durum         |
+| ---------- | ----------------------------------- | --------- | ------ | ------ | ------ | ------------- |
+| KRİTİK-001 | EfRepositoryBase.GetAsync predicate | 🔴 Yüksek | Yüksek | Düşük  | 30 dk  | ✅ TAMAMLANDI |
+| KRİTİK-002 | Connection pool monitoring          | 🔴 Yüksek | Yüksek | Orta   | 2 saat | ⏳ Beklemede  |
+| ORTA-001   | Event handler cache keys            | 🟠 Orta   | Orta   | Orta   | 2 saat | ✅ TAMAMLANDI |
+| ORTA-002   | Connection string pooling           | 🟠 Orta   | Orta   | Düşük  | 1 saat | ⏳ Beklemede  |
+| ORTA-003   | Cache stampede prevention           | 🟠 Orta   | Orta   | Yüksek | 1 gün  | ⏳ Beklemede  |
+| ORTA-004   | N+1 query optimization              | 🟠 Orta   | Orta   | Orta   | 4 saat | ⏳ Beklemede  |
+| FIX-001    | PermissionSeeder duplicate key      | 🔴 Yüksek | Yüksek | Düşük  | 1 saat | ✅ TAMAMLANDI |
+| FIX-002    | Docker Compose env variables        | 🟠 Orta   | Orta   | Düşük  | 30 dk  | ✅ TAMAMLANDI |
+| MINOR-001  | Magic numbers                       | 🟡 Düşük  | Düşük  | Düşük  | 2 saat | ⏳ Beklemede  |
+| MINOR-002  | String interpolation                | 🟡 Düşük  | Düşük  | -      | -      | ⏳ Beklemede  |
+| MINOR-003  | Pagination performance              | 🟡 Düşük  | Düşük  | Yüksek | 2 gün  | ⏳ Beklemede  |
 
 ---
 
@@ -475,11 +498,13 @@ BaseProject projesi **iyi bir mimari temele** sahip. Clean Architecture ve DDD p
 ### Performans Beklentisi
 
 Mevcut yapı ile:
+
 - **100-500 concurrent user**: ✅ Sorunsuz
 - **500-2000 concurrent user**: ⚠️ İyileştirmeler gerekli
 - **2000+ concurrent user**: ❌ Önemli optimizasyonlar şart
 
 İyileştirmeler sonrası:
+
 - **2000-5000 concurrent user**: ✅ Sorunsuz
 - **5000+ concurrent user**: ⚠️ Ek optimizasyonlar gerekebilir
 
@@ -498,6 +523,7 @@ Proje genel olarak **profesyonel seviyede** ve **best practice'lere uygun**. Tes
 **Implementasyon Detayları:**
 
 #### Backend
+
 - **Domain Layer:** `IAiService` interface eklendi
 - **Infrastructure Layer:** `AiService` implementasyonu
   - IHttpClientFactory ile HttpClient yönetimi
@@ -512,16 +538,19 @@ Proje genel olarak **profesyonel seviyede** ve **best practice'lere uygun**. Tes
 - **API Endpoint:** `GET /api/category/generate-description?categoryName=...`
 
 #### Frontend
+
 - Category form'una "Yapay Zeka ile Üret ✨" butonu eklendi
 - Loading state ve error handling
 - Toast notifications
 
 #### Docker
+
 - Ollama servisi `docker-compose.local.yml`'e eklendi
 - Healthcheck yapılandırması
 - Volume yönetimi (modeller kalıcı)
 
 **Best Practices:**
+
 - ✅ IHttpClientFactory kullanımı (connection pooling)
 - ✅ Polly retry policy (transient hatalar için)
 - ✅ Structured logging
@@ -530,6 +559,7 @@ Proje genel olarak **profesyonel seviyede** ve **best practice'lere uygun**. Tes
 - ✅ Proper error handling
 
 **Dosya Yapısı:**
+
 ```
 src/BaseProject.Infrastructure/
 ├── Models/
@@ -543,51 +573,10 @@ src/BaseProject.Infrastructure/
 
 ---
 
-### 11.2 ✅ Dashboard AI İçgörüleri ve Öneriler
-
-**Özellik:** Dashboard için AI destekli içgörüler, trendler, uyarılar ve öneriler üretme.
-
-**Implementasyon Detayları:**
-
-#### Backend
-- **Domain Layer:** `IAiService` interface'ine `GenerateDashboardInsightsAsync` metodu eklendi
-  - `DashboardStatistics` modeli
-  - `DashboardInsights` response modeli
-  - `InsightTrend`, `InsightAlert`, `InsightRecommendation` modelleri
-- **Application Layer:** 
-  - `GetAiInsightsQuery` ve `GetAiInsightsQueryHandler` eklendi
-  - `GetAiInsightsResponse` response modelleri
-- **API Endpoint:** `GET /api/dashboards/ai-insights`
-  - `[HasPermission(Permissions.DashboardAIInsights)]` attribute ile korumalı
-- **AI Service:**
-  - JSON formatında structured response parsing
-  - Aktivite loglarını analiz ederek trend tespiti
-  - Graceful degradation (hata durumunda boş içgörüler döndürür)
-
-#### Frontend
-- AI Insights Card component eklendi (`components/dashboard/ai-insights-card.tsx`)
-- Permission kontrolü ile görünürlük yönetimi
-- Manuel "İçgörüleri Yükle" butonu (maliyet kontrolü için otomatik güncelleme yok)
-- Loading ve empty state desteği
-- Trend, Alert ve Recommendation görüntüleme
-
-#### Permission
-- `Dashboard.AIInsights` permission'ı eklendi
-- Sadece yetkili kullanıcılar (admin) görüntüleyebilir
-- PermissionSeeder'a eklendi
-
-**Best Practices:**
-- ✅ Permission bazlı erişim kontrolü
-- ✅ Manuel tetikleme (maliyet kontrolü)
-- ✅ JSON parsing ile structured response
-- ✅ Graceful error handling
-- ✅ Frontend permission guard ile UI kontrolü
-
----
-
-### 11.3 ✅ Docker Compose ve PermissionSeeder Düzeltmeleri
+### 11.2 ✅ Docker Compose ve PermissionSeeder Düzeltmeleri
 
 **Sorunlar:**
+
 1. Docker Compose'da OllamaOptions için eksik environment variables
 2. Redis connection string'inde service adı uyumsuzluğu
 3. PermissionSeeder'da duplicate key hatası (NormalizedName unique constraint)
@@ -595,6 +584,7 @@ src/BaseProject.Infrastructure/
 **Yapılan Düzeltmeler:**
 
 #### Docker Compose İyileştirmeleri
+
 - OllamaOptions environment variables eklendi:
   - `OllamaOptions__TimeoutMinutes: 2`
   - `OllamaOptions__RetryCount: 3`
@@ -604,12 +594,14 @@ src/BaseProject.Infrastructure/
 - Healthcheck'ler basitleştirildi ve iyileştirildi
 
 #### PermissionSeeder Düzeltmeleri
+
 - NormalizedName bazlı kontrol eklendi (duplicate key sorunu çözüldü)
 - ID çakışması önleme mekanizması eklendi
 - Mevcut permission sayısına göre index başlatma
 - Idempotent seed işlemi (birden fazla kez çalıştırılabilir)
 
 **Dosya Yapısı:**
+
 ```
 src/BaseProject.Persistence/DatabaseInitializer/Seeders/
 └── PermissionSeeder.cs (güncellendi - NormalizedName bazlı kontrol)
@@ -628,6 +620,7 @@ src/BaseProject.Persistence/DatabaseInitializer/Seeders/
 **Implementasyon Detayları:**
 
 #### Backend
+
 - **OpenTelemetryConfiguration.cs:** OTLP exporter eklendi
   - Tracing için OTLP exporter (HTTP Request, EF Core, MassTransit)
   - Metrics için OTLP exporter
@@ -639,6 +632,7 @@ src/BaseProject.Persistence/DatabaseInitializer/Seeders/
   - gRPC ve HTTP/protobuf protokol desteği
 
 #### Docker
+
 - Jaeger servisi `docker-compose.local.yml`'e eklendi
   - Image: `jaegertracing/all-in-one:latest`
   - Portlar: 16686 (UI), 4317 (OTLP gRPC), 4318 (OTLP HTTP)
@@ -648,11 +642,13 @@ src/BaseProject.Persistence/DatabaseInitializer/Seeders/
   - `OTEL_EXPORTER_OTLP_PROTOCOL: grpc`
 
 #### Local Development
+
 - `appsettings.Development.json`'a OpenTelemetry konfigürasyonu eklendi
 - `launchSettings.json`'a environment variables eklendi
 - Local Jaeger çalıştırma komutu dokümante edildi
 
 **Best Practices:**
+
 - ✅ Environment variable ve appsettings.json desteği
 - ✅ Docker ve Local ortam ayrımı
 - ✅ gRPC ve HTTP/protobuf protokol desteği
@@ -660,6 +656,7 @@ src/BaseProject.Persistence/DatabaseInitializer/Seeders/
 - ✅ Trace ID correlation (loglarla bağlantılı)
 
 **Dosya Yapısı:**
+
 ```
 src/BaseProject.API/Configuration/
 └── OpenTelemetryConfiguration.cs (güncellendi - OTLP exporter eklendi)
@@ -677,8 +674,9 @@ docker-compose.local.yml
 **Implementasyon Detayları:**
 
 #### Backend
+
 - **SerilogConfiguration.cs:** Docker ve Local ortam ayrımı
-  - Environment variable desteği (Serilog__SeqUrl, Serilog__SeqApiKey)
+  - Environment variable desteği (Serilog**SeqUrl, Serilog**SeqApiKey)
   - Öncelik sırası: Environment Variable → appsettings.json → Default
   - Seq sink koşullu eklendi (Seq URL null ise eklenmiyor)
   - Log seviyesi optimizasyonu:
@@ -688,14 +686,17 @@ docker-compose.local.yml
     - File: Debug (tüm detaylar)
 
 #### Docker
+
 - `docker-compose.local.yml`'de Seq URL environment variable düzeltildi:
   - `Serilog__SeqUrl: http://seq:80` (Docker ortamında service name)
 
 #### Local Development
+
 - `appsettings.Development.json`'da `Serilog:SeqUrl: http://localhost:5341`
 - `appsettings.json`'a Serilog konfigürasyon bloğu eklendi
 
 **Best Practices:**
+
 - ✅ Docker ve Local ortam ayrımı
 - ✅ Environment variable desteği
 - ✅ Ortam bazlı log seviyesi optimizasyonu
@@ -703,6 +704,7 @@ docker-compose.local.yml
 - ✅ Performans için Production'da veritabanına sadece Warning+ loglar
 
 **Dosya Yapısı:**
+
 ```
 src/BaseProject.API/Configuration/
 └── SerilogConfiguration.cs (güncellendi - Docker/Local ortam desteği)
