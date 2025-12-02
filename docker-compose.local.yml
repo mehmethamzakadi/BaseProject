@@ -111,6 +111,8 @@ services:
     volumes:
       # Hot reload için appsettings mount
       - ./src/BaseProject.API/appsettings.Development.json:/app/appsettings.Development.json:ro
+      # Uploads klasörünü bağlıyoruz
+      - ./src/BaseProject.API/wwwroot/uploads:/app/wwwroot/uploads
     networks:
       - baseproject_local_net
     # Healthcheck devre dışı - curl/wget image'da yok

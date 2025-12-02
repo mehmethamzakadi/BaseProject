@@ -35,4 +35,19 @@ RUN dotnet publish "./BaseProject.API.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+
+
+# --- EKLEMEN GEREKEN KISIM BAŞLANGIÇ ---
+# Root kullanıcısına geçici olarak geçip klasörü hazırlarız
+USER root
+# Klasörü oluştur ve sahipliğini .NET'in kullandığı kullanıcıya (app) ver
+RUN mkdir -p /app/wwwroot/uploads && \
+    chown -R $APP_UID:$APP_UID /app/wwwroot/uploads
+
+# Tekrar güvenli kullanıcıya dön
+USER $APP_UID
+# --- EKLEMEN GEREKEN KISIM BİTİŞ ---
+
+
 ENTRYPOINT ["dotnet", "BaseProject.API.dll"]

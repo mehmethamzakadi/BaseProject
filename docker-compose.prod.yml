@@ -140,6 +140,9 @@ services:
       Serilog__WriteTo__1__Args__serverUrl: http://seq:80
       # CORS Policy (Production'da sadece kendi domaininden gelen isteklere izin ver)
       CorsOptions__AllowedOrigins: "${APP_URL:-https://yourdomain.com},http://baseproject.client"
+    volumes:
+      # Named Volume kullanıyoruz (Local'deki gibi ./src/... değil)
+      - uploads_prod_data:/app/wwwroot/uploads
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -340,7 +343,9 @@ volumes:
   seq_prod_data:
     name: baseproject_seq_prod
     driver: local
-
+  uploads_prod_data:
+    name: baseproject_uploads_prod
+    driver: local
 # ===========================================
 # Networks - Production (Isolated Network)
 # ===========================================
