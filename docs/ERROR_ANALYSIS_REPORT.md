@@ -606,6 +606,78 @@ public class NewConsumer : IConsumer<NewEvent>
 
 ---
 
+---
+
+## 11. ✅ Uygulanan Çözüm: RedisCacheService WRONGTYPE Hatası Düzeltmesi
+
+> **Güncelleme Tarihi:** 2 Aralık 2025  
+> **Durum:** ✅ **TAMAMLANDI** - WRONGTYPE hatası kalıcı olarak çözüldü
+
+### 11.1 Sorun
+
+**Hata Mesajı:**
+
+```
+StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key holding the wrong kind of value
+   at Microsoft.Extensions.Caching.StackExchangeRedis.RedisCache.GetAndRefreshAsync(...)
+   at BaseProject.Infrastructure.Services.RedisCacheService.AnyAsync(...)
+   at BaseProject.Infrastructure.Services.IdempotencyService.CheckAndAcquireLockAsync(...)
+```
+
+**Kök Sebep:**
+
+- `IDistributedCache` ve `IConnectionMultiplexer` arasında veri tipi tutarsızlığı
+- `IDistributedCache` farklı veri tipleri (hash, string vb.) kullanabiliyor
+- `IConnectionMultiplexer` ile yazılan String'ler `IDistributedCache` ile okunamıyordu
+- `AddIfNotExists` metodunda `IConnectionMultiplexer` kullanılıyordu, diğer metodlarda `IDistributedCache` kullanılıyordu
+
+**Etki:**
+
+- ✅ Idempotency kontrolü başarısız oluyordu
+- ✅ Mesaj işleme hataları oluşuyordu
+- ✅ Redis cache işlemleri tutarsızdı
+
+### 11.2 Uygulanan Çözüm
+
+**Yaklaşım:** `RedisCacheService` tamamen `IConnectionMultiplexer` kullanacak şekilde refactor edildi.
+
+#### Değişiklikler
+
+1. **Tam Refactoring:**
+   - `IDistributedCache` bağımlılığı kaldırıldı
+   - Tüm işlemler `StackExchange.Redis` ile yapılıyor
+   - Tutarlı String veri tipi garantisi
+
+2. **Key Naming Stratejisi:**
+   - `GetPrefixedKey` helper metodu eklendi
+   - Format: `BaseProject:{key}` (colon separator)
+   - Eski `BaseProject_` formatıyla uyumlu
+
+3. **Performans İyileştirmeleri:**
+   - `AnyAsync` artık `KeyExistsAsync` kullanıyor (değer okumadan kontrol)
+   - Tüm metodlar tutarlı `StringSetAsync`/`StringGetAsync` kullanıyor
+
+4. **DI Registration:**
+   - `RedisCacheService` yalnızca `IConnectionMultiplexer` mevcut olduğunda kaydediliyor
+
+### 11.3 Avantajlar
+
+✅ **WRONGTYPE hatası kalıcı olarak çözüldü** - Tutarlı veri tipi garantisi  
+✅ **Performans iyileştirmesi** - `KeyExistsAsync` kullanımı  
+✅ **Kod tutarlılığı** - Tüm işlemler aynı API ile  
+✅ **Sürdürülebilirlik** - Tek bir Redis client kullanımı  
+
+### 11.4 Dosya Yapısı
+
+```
+src/BaseProject.Infrastructure/
+├── Services/
+│   └── RedisCacheService.cs (tamamen refactor edildi)
+└── InfrastructureServicesRegistration.cs (DI registration güncellendi)
+```
+
+---
+
 **Rapor Hazırlayan:** AI Code Reviewer  
 **Tarih:** 2 Aralık 2025  
-**Versiyon:** 2.0 (Merkezi Çözüm Uygulandı)
+**Versiyon:** 2.1 (WRONGTYPE Hatası Çözüldü)

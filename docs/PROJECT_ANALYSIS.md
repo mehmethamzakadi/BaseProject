@@ -114,6 +114,45 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 
 ### 2.9 ✅ ActivityLogConsumer Race Condition Düzeltmesi ve Merkezi Idempotency Service
 
+### 2.10 ✅ RedisCacheService WRONGTYPE Hatası Düzeltmesi ve Refactoring
+
+**Durum:** Redis'te `WRONGTYPE Operation against a key holding the wrong kind of value` hatası oluşuyordu. Sorun, `IDistributedCache` ve `IConnectionMultiplexer` arasındaki veri tipi tutarsızlığından kaynaklanıyordu.
+
+**Yapılan İşlem:**
+
+- **Tam Refactoring:** `RedisCacheService` tamamen `IConnectionMultiplexer` kullanacak şekilde refactor edildi
+  - `IDistributedCache` bağımlılığı kaldırıldı
+  - Tüm işlemler `StackExchange.Redis` ile yapılıyor (tutarlı String veri tipi)
+  - `WRONGTYPE` hatası kalıcı olarak çözüldü
+
+- **Key Naming Stratejisi:**
+  - `GetPrefixedKey` helper metodu eklendi
+  - Format: `BaseProject:{key}` (colon separator)
+  - Eski `BaseProject_` formatıyla uyumlu (trailing underscore temizleniyor)
+
+- **Performans İyileştirmeleri:**
+  - `AnyAsync` artık `KeyExistsAsync` kullanıyor (değer okumadan kontrol - daha verimli)
+  - Tüm metodlar tutarlı `StringSetAsync`/`StringGetAsync` kullanıyor
+
+- **DI Registration:**
+  - `RedisCacheService` yalnızca `IConnectionMultiplexer` mevcut olduğunda kaydediliyor
+  - Redis yoksa açıklayıcı hata mesajı veriliyor
+
+**Avantajlar:**
+
+- ✅ `WRONGTYPE` hatası kalıcı olarak çözüldü
+- ✅ Veri tipi tutarlılığı garantilendi (her zaman String)
+- ✅ Performans iyileştirmesi (`KeyExistsAsync` kullanımı)
+- ✅ Kod tutarlılığı (tüm işlemler aynı API ile)
+- ✅ Sürdürülebilirlik (tek bir Redis client kullanımı)
+
+**Dosya Yapısı:**
+
+```
+src/BaseProject.Infrastructure/Services/
+└── RedisCacheService.cs (tamamen refactor edildi - IConnectionMultiplexer kullanıyor)
+```
+
 **Durum:** ActivityLogConsumer'da race condition sorunu vardı ve her consumer için idempotency mantığı tekrar yazılıyordu (kod tekrarı, SOLID ihlali).
 **Yapılan İşlem:**
 
@@ -190,6 +229,8 @@ BaseProject projesinde tespit edilen **Clean Architecture ihlalleri**, **Perform
 | FEAT-003 | Serilog/Seq İyileştirmeleri        | 30.11.2025 | ✅ Tamamlandı (Docker/Local ortam desteği)     |
 | FIX-001  | ActivityLogConsumer Race Condition | 02.12.2025 | ✅ Tamamlandı (Merkezi idempotency service)    |
 | ARCH-005 | Merkezi Idempotency Service        | 02.12.2025 | ✅ Tamamlandı (SOLID, Clean Code)              |
+| FIX-002  | RedisCacheService WRONGTYPE Hatası | 02.12.2025 | ✅ Tamamlandı (IConnectionMultiplexer refactoring) |
+| ARCH-006 | RedisCacheService Refactoring      | 02.12.2025 | ✅ Tamamlandı (Tutarlı veri tipi, performans) |
 
 > **Son Güncelleme:** 2 Aralık 2025
-> **Versiyon:** 1.5
+> **Versiyon:** 1.6

@@ -1,26 +1,52 @@
 using BaseProject.Application.Abstractions;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System.Text.Json;
 
 namespace BaseProject.Infrastructure.Services;
 
+/// <summary>
+/// Redis cache service implementation using StackExchange.Redis (IConnectionMultiplexer).
+/// All operations use raw Redis String operations to ensure consistent data types and eliminate WRONGTYPE errors.
+/// </summary>
 public sealed class RedisCacheService : ICacheService
 {
-    private readonly IDistributedCache _distributedCache;
-    private readonly IConnectionMultiplexer? _connectionMultiplexer;
+    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    private readonly string _keyPrefix;
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerOptions.Default)
     {
         PropertyNamingPolicy = null,
         WriteIndented = false
     };
 
-    public RedisCacheService(IDistributedCache distributedCache, IConnectionMultiplexer? connectionMultiplexer = null)
+    public RedisCacheService(
+        IConnectionMultiplexer connectionMultiplexer,
+        IConfiguration? configuration = null)
     {
-        _distributedCache = distributedCache;
-        _connectionMultiplexer = connectionMultiplexer;
+        _connectionMultiplexer = connectionMultiplexer ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
+        
+        // Get InstanceName from configuration or use default
+        var instanceName = configuration?.GetSection("RedisCache:InstanceName").Value 
+            ?? configuration?.GetValue<string>("Redis:InstanceName")
+            ?? "BaseProject";
+        
+        // Remove trailing underscore if present (for compatibility with old "BaseProject_" format)
+        instanceName = instanceName.TrimEnd('_');
+        
+        // Use colon separator for key prefix (e.g., "BaseProject:key")
+        _keyPrefix = $"{instanceName}:";
     }
 
+    /// <summary>
+    /// Gets the prefixed key for Redis operations.
+    /// Format: "{InstanceName}:{key}"
+    /// </summary>
+    private string GetPrefixedKey(string key) => $"{_keyPrefix}{key}";
+
+    /// <summary>
+    /// Adds a key-value pair to Redis with optional expiration.
+    /// Uses StringSetAsync to ensure consistent String data type.
+    /// </summary>
     public async Task Add(string key, object data, DateTimeOffset? absExpr, TimeSpan? sldExpr)
     {
         if (data is null)
@@ -28,41 +54,79 @@ public sealed class RedisCacheService : ICacheService
             return;
         }
 
-        var cacheEntryOptions = new DistributedCacheEntryOptions
-        {
-            AbsoluteExpiration = absExpr,
-            SlidingExpiration = sldExpr
-        };
-
+        var database = _connectionMultiplexer.GetDatabase();
         string json = JsonSerializer.Serialize(data, SerializerOptions);
-        await _distributedCache.SetStringAsync(key, json, cacheEntryOptions);
+        var prefixedKey = GetPrefixedKey(key);
+
+        // Calculate expiration TimeSpan
+        TimeSpan? expiration = null;
+        if (absExpr.HasValue)
+        {
+            expiration = absExpr.Value.Subtract(DateTimeOffset.UtcNow);
+            // If expiration is in the past, don't set it
+            if (expiration.Value.TotalSeconds <= 0)
+            {
+                return;
+            }
+        }
+        else if (sldExpr.HasValue)
+        {
+            expiration = sldExpr;
+        }
+
+        await database.StringSetAsync(prefixedKey, json, expiration);
     }
 
+    /// <summary>
+    /// Checks if a key exists in Redis.
+    /// Uses KeyExistsAsync for efficient existence check without reading the value.
+    /// </summary>
     public async Task<bool> AnyAsync(string key)
     {
-        var data = await _distributedCache.GetStringAsync(key);
-        return !string.IsNullOrEmpty(data);
+        var database = _connectionMultiplexer.GetDatabase();
+        var prefixedKey = GetPrefixedKey(key);
+        return await database.KeyExistsAsync(prefixedKey);
     }
 
+    /// <summary>
+    /// Gets a value from Redis and deserializes it to the specified type.
+    /// Uses StringGetAsync to read String data type.
+    /// </summary>
     public async Task<T?> Get<T>(string key)
     {
-        var data = await _distributedCache.GetStringAsync(key);
-        if (string.IsNullOrEmpty(data))
+        var database = _connectionMultiplexer.GetDatabase();
+        var prefixedKey = GetPrefixedKey(key);
+        
+        var value = await database.StringGetAsync(prefixedKey);
+        if (!value.HasValue)
         {
             return default;
         }
 
-        return JsonSerializer.Deserialize<T>(data, SerializerOptions);
-    }
+        var json = value.ToString();
+        if (string.IsNullOrEmpty(json))
+        {
+            return default;
+        }
 
-    public async Task Remove(string key)
-    {
-        await _distributedCache.RemoveAsync(key);
+        return JsonSerializer.Deserialize<T>(json, SerializerOptions);
     }
 
     /// <summary>
-    /// Redis'e key ekler, ancak sadece key yoksa (SETNX - SET if Not eXists).
-    /// Atomic işlem - race condition'ı önler.
+    /// Removes a key from Redis.
+    /// Uses KeyDeleteAsync to delete the key.
+    /// </summary>
+    public async Task Remove(string key)
+    {
+        var database = _connectionMultiplexer.GetDatabase();
+        var prefixedKey = GetPrefixedKey(key);
+        await database.KeyDeleteAsync(prefixedKey);
+    }
+
+    /// <summary>
+    /// Adds a key to Redis only if it doesn't exist (SETNX - SET if Not eXists).
+    /// Atomic operation that prevents race conditions.
+    /// Uses StringSetAsync with When.NotExists to ensure consistent String data type.
     /// </summary>
     public async Task<bool> AddIfNotExists(string key, object data, DateTimeOffset? absExpr, TimeSpan? sldExpr)
     {
@@ -71,32 +135,31 @@ public sealed class RedisCacheService : ICacheService
             return false;
         }
 
-        // Eğer IConnectionMultiplexer yoksa (ör: MemoryCache kullanılıyorsa), fallback olarak normal Add kullan
-        if (_connectionMultiplexer == null)
+        var database = _connectionMultiplexer.GetDatabase();
+        string json = JsonSerializer.Serialize(data, SerializerOptions);
+        var prefixedKey = GetPrefixedKey(key);
+
+        // Calculate expiration TimeSpan
+        TimeSpan? expiration = null;
+        if (absExpr.HasValue)
         {
-            // MemoryCache veya başka bir cache provider kullanılıyorsa, atomic olmayan kontrol yap
-            var exists = await AnyAsync(key);
-            if (exists)
+            expiration = absExpr.Value.Subtract(DateTimeOffset.UtcNow);
+            // If expiration is in the past, don't set it
+            if (expiration.Value.TotalSeconds <= 0)
             {
                 return false;
             }
-
-            await Add(key, data, absExpr, sldExpr);
-            return true;
+        }
+        else if (sldExpr.HasValue)
+        {
+            expiration = sldExpr;
         }
 
-        // Redis SETNX kullanarak atomic işlem
-        var database = _connectionMultiplexer.GetDatabase();
-        string json = JsonSerializer.Serialize(data, SerializerOptions);
-
-        // Instance name'i key'e ekle (AddStackExchangeRedisCache'deki InstanceName ile uyumlu olmalı)
-        var prefixedKey = $"BaseProject_{key}";
-
-        // SETNX ile atomic olarak key ekle
+        // SETNX - atomic operation: set only if not exists
         var wasSet = await database.StringSetAsync(
             prefixedKey,
             json,
-            absExpr?.Subtract(DateTimeOffset.UtcNow) ?? sldExpr,
+            expiration,
             When.NotExists);
 
         return wasSet;

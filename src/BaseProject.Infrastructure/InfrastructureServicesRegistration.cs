@@ -9,6 +9,7 @@ using BaseProject.Domain.Repositories;
 using BaseProject.Domain.Services;
 using BaseProject.Infrastructure.Authorization;
 using BaseProject.Infrastructure.Consumers;
+using BaseProject.Infrastructure.Consumers.Checkers;
 using BaseProject.Infrastructure.Consumers.Filters;
 using BaseProject.Infrastructure.Options;
 using BaseProject.Infrastructure.Services;
@@ -79,18 +80,20 @@ namespace BaseProject.Infrastructure
             });
 
             var redisConnectionString = configuration.GetConnectionString("RedisCache");
+            IConnectionMultiplexer? connectionMultiplexer = null;
+            
             if (!string.IsNullOrWhiteSpace(redisConnectionString))
             {
-                // Redis cache için IDistributedCache register et
+                // Redis cache için IDistributedCache register et (diğer servisler için gerekli olabilir)
                 services.AddStackExchangeRedisCache(options =>
                 {
                     options.Configuration = redisConnectionString;
                     options.InstanceName = "BaseProject_";
                 });
 
-                // IConnectionMultiplexer'ı da register et (SETNX işlemleri için)
-                services.AddSingleton<IConnectionMultiplexer>(sp =>
-                    ConnectionMultiplexer.Connect(redisConnectionString));
+                // IConnectionMultiplexer'ı register et (RedisCacheService için gerekli)
+                connectionMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
+                services.AddSingleton<IConnectionMultiplexer>(connectionMultiplexer);
             }
             else
             {
@@ -111,44 +114,15 @@ namespace BaseProject.Infrastructure
                         hostConfigurator.Password(rabbitOptions.Password);
                     });
 
+                    // ✅ Global idempotency filter - tüm consumer'lara otomatik uygulanır
+                    // Filter, IIdempotencyChecker<TMessage> implementasyonu varsa idempotency kontrolü yapar
+                    // Yoksa idempotency kontrolü atlanır (opsiyonel)
+                    cfg.UseConsumeFilter(typeof(IdempotencyFilter<>), context);
+
                     // ✅ OpenTelemetry tracing desteği - Trace ID'yi mesajlara ekle
                     cfg.ConfigureEndpoints(context);
 
-                    // Activity Log queue with retry and error handling
-                    cfg.ReceiveEndpoint(EventConstants.ActivityLogQueue, endpointConfigurator =>
-                    {
-                        endpointConfigurator.ConfigureConsumer<ActivityLogConsumer>(context);
-
-                        // ✅ Idempotency filter ekle - mesaj tekrar işlemeyi önler
-                        // Not: IServiceProvider root provider'dan alınır, filter içinde scope oluşturulur
-                        var serviceProvider = context; // IBusRegistrationContext is IServiceProvider
-                        var scopeFactory = context.GetRequiredService<IServiceScopeFactory>();
-                        endpointConfigurator.UseFilter(new IdempotencyFilter<ActivityLogCreatedIntegrationEvent>(
-                            serviceProvider,
-                            context.GetRequiredService<ILogger<IdempotencyFilter<ActivityLogCreatedIntegrationEvent>>>(),
-                            keyPrefix: "idempotency:activitylog:",
-                            fallbackIdGenerator: msg => GuidHelper.GenerateDeterministicGuid($"{msg.EntityId}_{msg.Timestamp:O}_{msg.ActivityType}"),
-                            existsCheck: async (id, ct) =>
-                            {
-                                // existsCheck içinde de scope oluşturulmalı
-                                using var scope = scopeFactory.CreateScope();
-                                var repo = scope.ServiceProvider.GetRequiredService<IActivityLogRepository>();
-                                return await repo.ExistsByIdAsync(id, ct);
-                            }
-                        ));
-
-                        // Retry configuration
-                        endpointConfigurator.UseMessageRetry(retryConfigurator =>
-                            retryConfigurator.Exponential(5,
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromMinutes(5),
-                                TimeSpan.FromSeconds(2)));
-
-                        // Concurrency settings
-                        endpointConfigurator.PrefetchCount = 16;
-                        endpointConfigurator.ConcurrentMessageLimit = 8;
-                    });
-
+                    // Global retry configuration
                     if (rabbitOptions.RetryLimit > 0)
                     {
                         cfg.UseMessageRetry(retryConfigurator => retryConfigurator.Immediate(rabbitOptions.RetryLimit));
@@ -156,7 +130,8 @@ namespace BaseProject.Infrastructure
                 });
             });
 
-            services.AddScoped<ActivityLogConsumer>();
+            // ✅ Idempotency Checkers - Strategy Pattern ile idempotency kontrolü
+            services.AddScoped<IIdempotencyChecker<ActivityLogCreatedIntegrationEvent>, ActivityLogIdempotencyChecker>();
 
             // Background Services
             services.AddHostedService<Services.BackgroundServices.OutboxProcessorService>();
@@ -172,7 +147,19 @@ namespace BaseProject.Infrastructure
                 services.AddScoped(converterInterface, impl);
             }
 
-            services.AddSingleton<ICacheService, RedisCacheService>();
+            // RedisCacheService requires IConnectionMultiplexer - only register if Redis is available
+            if (connectionMultiplexer != null)
+            {
+                services.AddSingleton<ICacheService, RedisCacheService>();
+            }
+            else
+            {
+                // Fallback: If Redis is not available, you may want to register a MemoryCache-based implementation
+                // For now, we'll throw an exception if Redis is required but not available
+                // You can implement a fallback ICacheService if needed
+                throw new InvalidOperationException(
+                    "Redis connection string is required for ICacheService. Please configure RedisCache connection string.");
+            }
             services.AddScoped<IIdempotencyService, IdempotencyService>();
             services.AddTransient<ITokenService, JwtTokenService>();
             services.AddTransient<IMailService, MailService>();

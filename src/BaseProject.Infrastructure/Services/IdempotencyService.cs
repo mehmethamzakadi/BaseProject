@@ -32,6 +32,9 @@ public class IdempotencyService : IIdempotencyService
         var idempotencyId = messageId ?? fallbackId
             ?? throw new ArgumentException("Either messageId or fallbackId must be provided");
 
+        // ✅ keyPrefix zaten versioned ve namespaced (örn: "idempotency:v2:ActivityLogCreatedIntegrationEvent:")
+        // Sadece idempotencyId'yi ekle - ek prefix ekleme yok
+        // Final key format: "idempotency:v2:ActivityLogCreatedIntegrationEvent:{idempotencyId}"
         var idempotencyKey = $"{keyPrefix}{idempotencyId}";
 
         // 1. Redis'te kontrol et (hızlı kontrol)
@@ -101,6 +104,9 @@ public class IdempotencyService : IIdempotencyService
         string keyPrefix,
         CancellationToken cancellationToken = default)
     {
+        // ✅ keyPrefix zaten versioned ve namespaced (örn: "idempotency:v2:ActivityLogCreatedIntegrationEvent:")
+        // Sadece idempotencyId'yi ekle - ek prefix ekleme yok
+        // Final key format: "idempotency:v2:ActivityLogCreatedIntegrationEvent:{idempotencyId}"
         var idempotencyKey = $"{keyPrefix}{idempotencyId}";
 
         // Redis'i güncelle (zaten eklenmiş olabilir ama emin olmak için)

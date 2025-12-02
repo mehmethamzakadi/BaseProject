@@ -801,6 +801,76 @@ public class ActivityLogConsumer : IConsumer<ActivityLogCreatedIntegrationEvent>
 
 ---
 
+---
+
+## 14. Yeni Özellikler (v2.5)
+
+### 14.1 ✅ RedisCacheService WRONGTYPE Hatası Düzeltmesi ve Refactoring
+
+**Özellik:** Redis'te `WRONGTYPE Operation against a key holding the wrong kind of value` hatası kalıcı olarak çözüldü ve `RedisCacheService` tamamen `IConnectionMultiplexer` kullanacak şekilde refactor edildi.
+
+**Implementasyon Detayları:**
+
+#### Sorun
+
+- `IDistributedCache` ve `IConnectionMultiplexer` arasında veri tipi tutarsızlığı
+- `IDistributedCache` farklı veri tipleri (hash, string vb.) kullanabiliyor
+- `IConnectionMultiplexer` ile yazılan String'ler `IDistributedCache` ile okunamıyordu
+- `WRONGTYPE` hatası sürekli oluşuyordu
+
+#### Çözüm
+
+- **Tam Refactoring:** `RedisCacheService` tamamen `IConnectionMultiplexer` kullanacak şekilde refactor edildi
+  - `IDistributedCache` bağımlılığı kaldırıldı
+  - Tüm işlemler `StackExchange.Redis` ile yapılıyor
+  - Tutarlı String veri tipi garantisi
+
+- **Key Naming Stratejisi:**
+  - `GetPrefixedKey` helper metodu eklendi
+  - Format: `BaseProject:{key}` (colon separator)
+  - Eski `BaseProject_` formatıyla uyumlu (trailing underscore temizleniyor)
+  - Configuration'dan `InstanceName` okunuyor (default: "BaseProject")
+
+- **Metod Implementasyonları:**
+  - `Add`: `StringSetAsync` kullanıyor
+  - `Get<T>`: `StringGetAsync` kullanıyor
+  - `AnyAsync`: `KeyExistsAsync` kullanıyor (değer okumadan kontrol - daha verimli)
+  - `Remove`: `KeyDeleteAsync` kullanıyor
+  - `AddIfNotExists`: `StringSetAsync` ile `When.NotExists` kullanıyor
+
+- **DI Registration:**
+  - `RedisCacheService` yalnızca `IConnectionMultiplexer` mevcut olduğunda kaydediliyor
+  - Redis yoksa açıklayıcı hata mesajı veriliyor
+
+**Best Practices:**
+
+- ✅ Tutarlı veri tipi (her zaman String)
+- ✅ Performans iyileştirmesi (`KeyExistsAsync` kullanımı)
+- ✅ Kod tutarlılığı (tüm işlemler aynı API ile)
+- ✅ Sürdürülebilirlik (tek bir Redis client kullanımı)
+- ✅ Configuration desteği (InstanceName yapılandırılabilir)
+
+**Dosya Yapısı:**
+
+```
+src/BaseProject.Infrastructure/
+├── Services/
+│   └── RedisCacheService.cs (tamamen refactor edildi)
+└── InfrastructureServicesRegistration.cs (DI registration güncellendi)
+```
+
+**Kullanım Örneği:**
+
+```csharp
+// Tüm işlemler tutarlı String tipinde
+await _cacheService.Add("key", data, expiration, null);
+var exists = await _cacheService.AnyAsync("key"); // KeyExistsAsync kullanıyor
+var data = await _cacheService.Get<MyType>("key"); // StringGetAsync kullanıyor
+await _cacheService.Remove("key"); // KeyDeleteAsync kullanıyor
+```
+
+---
+
 **Rapor Hazırlayan:** AI Code Reviewer  
 **Tarih:** 2 Aralık 2025  
-**Versiyon:** 2.4
+**Versiyon:** 2.5
