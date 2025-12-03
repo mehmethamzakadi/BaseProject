@@ -1,45 +1,25 @@
-using AspNetCoreRateLimit;
 using BaseProject.API.Configuration;
-using BaseProject.API.Filters;
-using BaseProject.API.Middlewares;
+using BaseProject.API.Extensions;
 using BaseProject.Application;
-using BaseProject.Domain.Common.Results;
 using BaseProject.Infrastructure;
-using BaseProject.Infrastructure.Options;
 using BaseProject.Persistence;
 using BaseProject.Persistence.DatabaseInitializer;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
-using OpenTelemetry.Trace;
-using Scalar.AspNetCore;
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Kestrel Server Optimizations
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.Limits.MaxConcurrentConnections = 1000;
-    serverOptions.Limits.MaxConcurrentUpgradedConnections = 1000;
-    serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10MB
-    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
-    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
-});
+// ✅ Kestrel Server Optimizations
+builder.ConfigureKestrelServer();
 
-// Serilog yapılandırmasını yükle
+// ✅ Serilog yapılandırmasını yükle
 builder.ConfigureSerilog();
 
-var corsPolicyName = "_dynamicCorsPolicy";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-if (allowedOrigins.Length == 0)
-{
-    throw new InvalidOperationException("En az bir izinli CORS origin yapılandırılmalıdır (Cors:AllowedOrigins).");
-}
+// ✅ CORS Policy yapılandırması
+builder.Services.AddCorsPolicy(builder.Configuration, out var corsPolicyName);
 
-// OpenTelemetry yapılandırması - Tracing ve Metrics için
+// ✅ OpenTelemetry yapılandırması - Tracing ve Metrics için
 builder.Services.AddOpenTelemetryServices(builder.Configuration, builder.Environment);
 
+// ✅ Katman servisleri
 builder.Services.AddConfigurePersistenceServices(builder.Configuration);
 builder.Services.AddConfigureApplicationServices(builder.Configuration);
 builder.Services.AddConfigureInfrastructureServices(builder.Configuration);
@@ -47,200 +27,37 @@ builder.Services.AddConfigureInfrastructureServices(builder.Configuration);
 builder.Services.AddOptions();
 builder.Services.AddHttpContextAccessor();
 
-// Response Caching
-builder.Services.AddResponseCaching();
+// ✅ Response Optimization (Caching & Compression)
+builder.Services.AddResponseOptimization();
 
-// Response Compression
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
-    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
-});
+// ✅ Rate Limiting
+builder.Services.AddRateLimiting(builder.Configuration);
 
-builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(options =>
-{
-    options.Level = System.IO.Compression.CompressionLevel.Fastest;
-});
+// ✅ API Controllers
+builder.Services.AddApiControllers();
 
-builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(options =>
-{
-    options.Level = System.IO.Compression.CompressionLevel.Fastest;
-});
-
-// Rate Limit yapılandırması
-builder.Services.AddMemoryCache();
-builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
-builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
-builder.Services.AddInMemoryRateLimiting();
-builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: corsPolicyName, policyBuilder =>
-    {
-        policyBuilder.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // React withCredentials için gerekli
-    });
-});
-
-builder.Services.AddControllers(options =>
-    {
-        // Request/Response loglama için global action filter ekle
-        options.Filters.Add<RequestResponseLoggingFilter>();
-    })
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var errors = context.ModelState
-                .Where(state => state.Value?.Errors.Count > 0)
-                .SelectMany(state => state.Value!.Errors)
-                .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
-                    ? "Geçersiz veya eksik bilgiler mevcut."
-                    : error.ErrorMessage)
-                .Distinct()
-                .ToList();
-
-            var apiResult = new ApiResult<object>
-            {
-                Success = false,
-                Message = errors.FirstOrDefault() ?? "Geçersiz veya eksik bilgiler mevcut.",
-                InternalMessage = "ModelValidationError",
-                Errors = errors
-            };
-
-            return new BadRequestObjectResult(apiResult);
-        };
-    });
-
-// Küçük harfli URL'ler için routing yapılandırması
-builder.Services.Configure<RouteOptions>(options =>
-{
-    options.LowercaseUrls = true;
-    options.LowercaseQueryStrings = false;
-});
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddOpenApi(options =>
-{
-    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
-});
-
-var isDevelopment = builder.Environment.IsDevelopment();
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie = new CookieBuilder
-    {
-        Name = "BaseProject",
-        HttpOnly = true,
-        SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict,
-        SecurePolicy = isDevelopment ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always,
-    };
-    options.LoginPath = "/Identity/Account/Login";
-    options.LogoutPath = "/Identity/Account/Logout";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-    options.SlidingExpiration = true;
-});
+// ✅ Application Cookie
+builder.Services.AddApplicationCookie(builder.Environment);
 
 var app = builder.Build();
 
-app.UseStaticFiles();
+// ✅ Static Files & Image Storage
+app.UseStaticFilesWithImageStorage();
 
-var imageStorageOptions = app.Services.GetRequiredService<IOptions<ImageStorageOptions>>().Value;
-var imageRootPath = imageStorageOptions.RootPath;
-if (!Path.IsPathRooted(imageRootPath))
-{
-    imageRootPath = Path.Combine(app.Environment.ContentRootPath, imageRootPath);
-}
+// ✅ API Documentation (Development only)
+app.UseApiDocumentation();
 
-imageRootPath = Path.GetFullPath(imageRootPath);
-Directory.CreateDirectory(imageRootPath);
+// ✅ Serilog Request Logging
+app.UseSerilogRequestLogging();
 
-if (Directory.Exists(imageRootPath))
-{
-    var requestPathValue = (imageStorageOptions.RequestPath ?? string.Empty).Trim();
-    if (!string.IsNullOrWhiteSpace(requestPathValue) && !requestPathValue.StartsWith('/'))
-    {
-        requestPathValue = "/" + requestPathValue;
-    }
-
-    requestPathValue = requestPathValue.TrimEnd('/');
-
-    var staticFileOptions = new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(imageRootPath),
-        RequestPath = string.IsNullOrWhiteSpace(requestPathValue) ? default : new PathString(requestPathValue)
-    };
-
-    app.UseStaticFiles(staticFileOptions);
-}
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();  // OpenAPI dokümanı için endpoint ekle
-
-    app.MapScalarApiReference(options =>
-    {
-        options.Title = "BaseProject API";
-        options.Theme = ScalarTheme.DeepSpace; // DeepSpace, Light, Solar gibi temalar kullanılabilir
-    });
-}
-
-// Serilog request logging ekle - Trace ID ile zenginleştirilmiş
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
-    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value ?? "unknown");
-        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-        diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-        diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].ToString());
-
-        // ✅ OpenTelemetry Trace ID'yi loglara ekle
-        var activity = System.Diagnostics.Activity.Current;
-        if (activity != null)
-        {
-            diagnosticContext.Set("TraceId", activity.TraceId.ToString());
-            diagnosticContext.Set("SpanId", activity.SpanId.ToString());
-            diagnosticContext.Set("ParentSpanId", activity.ParentSpanId.ToString());
-        }
-
-        if (httpContext.User?.Identity?.IsAuthenticated == true)
-        {
-            diagnosticContext.Set("UserName", httpContext.User.Identity.Name ?? "unknown");
-        }
-    };
-});
-
-// Veritabanı başlatma ve gerekli tabloları oluştur
+// ✅ Veritabanı başlatma ve gerekli tabloları oluştur
 await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
 var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
 await dbInitializer.InitializeAsync(scope.ServiceProvider, app.Lifetime.ApplicationStopping);
 await dbInitializer.EnsurePostgreSqlSerilogTableAsync(builder.Configuration, app.Lifetime.ApplicationStopping);
 
-//app.UseHttpsRedirection();
-
-app.UseResponseCompression();
-app.UseResponseCaching();
-
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-app.UseRouting();
-
-app.UseCors(corsPolicyName); // CORS, endpoint routing sonrası ve auth öncesi konumlandırılmalı
-
-app.UseIpRateLimiting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
+// ✅ Middleware Pipeline
+app.UseApiMiddleware(corsPolicyName);
 
 await app.RunAsync();
 

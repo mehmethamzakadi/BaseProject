@@ -30,7 +30,20 @@ where TContext : DbContext
 
     public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
     {
-        IQueryable<TEntity> queryable = BuildQueryable(predicate, include: null, withDeleted, enableTracking);
+        // ✅ Performans iyileştirmesi: AnyAsync için Include gerekmez, sadece varlık kontrolü yapıyoruz
+        // BuildQueryable include parametresi kullanıyor ve gereksiz JOIN'ler ekleyebilir
+        // Bu yüzden doğrudan DbSet üzerinden çalışıyoruz
+        IQueryable<TEntity> queryable = Context.Set<TEntity>();
+
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+
         return await queryable.AnyAsync(cancellationToken);
     }
 

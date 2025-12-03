@@ -12,8 +12,6 @@ namespace BaseProject.Infrastructure.Consumers;
 /// <summary>
 /// Consumes ActivityLogCreatedIntegrationEvent from RabbitMQ
 /// and persists the activity log to the database
-/// 
-/// Note: Idempotency kontrolü IdempotencyFilter tarafından otomatik olarak yapılır
 /// </summary>
 public class ActivityLogConsumer : IConsumer<ActivityLogCreatedIntegrationEvent>
 {
@@ -35,12 +33,22 @@ public class ActivityLogConsumer : IConsumer<ActivityLogCreatedIntegrationEvent>
     {
         var message = context.Message;
 
-        // Idempotency kontrolü IdempotencyFilter tarafından otomatik olarak yapılır
-        // Burada sadece business logic'e odaklanıyoruz
-
-        // ActivityLog ID'sini belirle (MessageId veya fallback)
+        // Basit idempotency kontrolü - aynı ID'ye sahip kayıt varsa atla
         var activityLogId = context.MessageId ?? GuidHelper.GenerateDeterministicGuid(
             $"{message.EntityId}_{message.Timestamp:O}_{message.ActivityType}");
+
+        // Mükerrer kayıt kontrolü
+        var exists = await _activityLogRepository.ExistsByIdAsync(
+            activityLogId,
+            context.CancellationToken);
+
+        if (exists)
+        {
+            _logger.LogInformation(
+                "ActivityLog already exists. Skipping duplicate. Id: {ActivityLogId}",
+                activityLogId);
+            return;
+        }
 
         // ✅ OpenTelemetry Trace ID'yi loglara ekle
         var activity = Activity.Current;

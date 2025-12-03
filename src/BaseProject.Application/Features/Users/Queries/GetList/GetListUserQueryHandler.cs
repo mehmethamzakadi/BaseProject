@@ -11,14 +11,13 @@ public sealed class GetListUserQueryHandler(IUserRepository userRepository, IMap
 {
     public async Task<PaginatedListResponse<GetListUserResponse>> Handle(GetListUsersQuery request, CancellationToken cancellationToken)
     {
-        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
-        // GetUsersAsync metodu zaten Include kullanıyor, tracking kapalı olmalı
+        // ✅ Repository üzerinden paginated list alıyoruz (Clean Architecture - Application katmanı Persistence'a bağımlı değil)
         Paginate<User> userList = await userRepository.GetUsersAsync(
-        index: request.PageRequest.PageIndex,
-        size: request.PageRequest.PageSize,
-        cancellationToken: cancellationToken
-        );
+            index: request.PageRequest.PageIndex,
+            size: request.PageRequest.PageSize,
+            cancellationToken: cancellationToken);
 
+        // ✅ AutoMapper ile DTO'ya map ediyoruz
         PaginatedListResponse<GetListUserResponse> response = mapper.Map<PaginatedListResponse<GetListUserResponse>>(userList);
         return response;
     }

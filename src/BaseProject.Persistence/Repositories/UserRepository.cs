@@ -15,11 +15,12 @@ public sealed class UserRepository : EfRepositoryBase<User, BaseProjectDbContext
 
     public async Task<Paginate<User>> GetUsersAsync(int index, int size, CancellationToken cancellationToken)
     {
-        // ✅ Read-only sorgu - tracking'e gerek yok (performans için)
+        // ✅ Performans iyileştirmesi: Entity'yi tamamen yüklemek yerine sadece gerekli alanları çekiyoruz
+        // Ancak AutoMapper projection için Application katmanına bağımlılık gerektiğinden,
+        // burada entity'yi yükleyip Application katmanında map ediyoruz (Clean Architecture)
+        // İleride IUserRepository'ye generic projection metodu eklenebilir
         return await Context.Users
             .AsNoTracking()
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
             .OrderBy(u => u.Id)
             .ToPaginateAsync(index, size, cancellationToken);
     }

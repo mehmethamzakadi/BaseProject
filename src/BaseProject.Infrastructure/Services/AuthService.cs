@@ -86,25 +86,17 @@ public sealed class AuthService : IAuthService
         // ✅ SECURITY: Reset failed access count on successful login
         user.ResetAccessFailedCount();
 
+        // ✅ Performans iyileştirmesi: Bulk update kullanarak veriyi RAM'e çekmeden tek SQL sorgusuyla güncelle
         // Revoke existing active sessions for this device (if deviceId provided)
         // This ensures only one active session per device while allowing multi-device login
         if (!string.IsNullOrWhiteSpace(deviceId))
         {
-            var existingSessions = await _refreshSessionRepository.GetActiveSessionsAsync(user.Id);
-            var deviceSessions = existingSessions.Where(s => s.DeviceId == deviceId).ToList();
-            
-            if (deviceSessions.Count > 0)
-            {
-                foreach (var existingSession in deviceSessions)
-                {
-                    existingSession.Revoked = true;
-                    existingSession.RevokedAt = DateTime.UtcNow;
-                    existingSession.RevokedReason = "Replaced by new login";
-                    existingSession.UpdatedDate = DateTime.UtcNow;
-                    existingSession.UpdatedById = SystemUsers.SystemUserId;
-                }
-                _refreshSessionRepository.UpdateRange(deviceSessions);
-            }
+            await _refreshSessionRepository.RevokeActiveSessionsByDeviceAsync(
+                user.Id,
+                deviceId,
+                "Replaced by new login",
+                SystemUsers.SystemUserId,
+                cancellationToken: default);
         }
 
         var authClaims = await _tokenService.GetAuthClaims(user);
@@ -248,13 +240,13 @@ public sealed class AuthService : IAuthService
 
             // Token'ı hash'le ve veritabanına hash'i sakla
             string tokenHash = HashPasswordResetToken(resetToken);
-            
+
             // ✅ SECURITY: Using User entity behavior method
             user.SetPasswordResetToken(tokenHash, DateTime.UtcNow.AddHours(1));
 
             _userRepository.Update(user);
             await SaveChangesWithConcurrencyHandlingAsync();
-            
+
             // Kullanıcıya orijinal token'ı gönder (hash'i değil!)
             await _mailService.SendPasswordResetMailAsync(email, user.Id, resetToken.UrlEncode());
         }
@@ -275,19 +267,12 @@ public sealed class AuthService : IAuthService
 
     private async Task RevokeAllSessionsAsync(Guid userId, string reason)
     {
-        var sessions = await _refreshSessionRepository.GetActiveSessionsAsync(userId);
-        if (sessions.Count > 0)
-        {
-            foreach (var session in sessions)
-            {
-                session.Revoked = true;
-                session.RevokedAt = DateTime.UtcNow;
-                session.RevokedReason = reason;
-                session.UpdatedDate = DateTime.UtcNow;
-                session.UpdatedById = SystemUsers.SystemUserId;
-            }
-            _refreshSessionRepository.UpdateRange(sessions.ToList());
-        }
+        // ✅ Performans iyileştirmesi: ExecuteUpdateAsync kullanarak veriyi RAM'e çekmeden tek SQL sorgusuyla güncelle
+        await _refreshSessionRepository.RevokeAllActiveSessionsAsync(
+            userId,
+            reason,
+            SystemUsers.SystemUserId,
+            cancellationToken: default);
     }
 
     public async Task<IDataResult<bool>> PasswordVerify(string resetToken, string userId)
@@ -313,7 +298,24 @@ public sealed class AuthService : IAuthService
                 return new SuccessDataResult<bool>(false);
             }
 
-            resetToken = resetToken.UrlDecode();
+            // ✅ Mantıksal hata düzeltmesi: Controller katmanında token zaten decode edilmiş olabilir
+            // URL'den gelen token'lar genellikle otomatik decode edilir, body'den gelenler encode edilmiş olabilir
+            // Try-catch ile decode işlemini yapıyoruz, hata olursa zaten decode edilmiş kabul ediyoruz
+            try
+            {
+                // Eğer token encode edilmişse decode et
+                if (!string.IsNullOrWhiteSpace(resetToken) && resetToken.Contains('-') == false)
+                {
+                    // Base64Url encoded token'lar genellikle '-' içermez, bu yüzden decode edilmeye çalışıyoruz
+                    resetToken = resetToken.UrlDecode();
+                }
+            }
+            catch
+            {
+                // Decode başarısız oldu, token zaten decode edilmiş kabul et
+                _logger.LogDebug("Token decode edilemedi, zaten decode edilmiş kabul ediliyor");
+            }
+
             string tokenHash = HashPasswordResetToken(resetToken);
 
             // ✅ SECURITY: Constant-time comparison to prevent timing attacks

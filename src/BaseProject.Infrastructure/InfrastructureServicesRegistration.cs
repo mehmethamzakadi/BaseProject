@@ -9,8 +9,6 @@ using BaseProject.Domain.Repositories;
 using BaseProject.Domain.Services;
 using BaseProject.Infrastructure.Authorization;
 using BaseProject.Infrastructure.Consumers;
-using BaseProject.Infrastructure.Consumers.Checkers;
-using BaseProject.Infrastructure.Consumers.Filters;
 using BaseProject.Infrastructure.Options;
 using BaseProject.Infrastructure.Services;
 using BaseProject.Infrastructure.Services.BackgroundServices.Outbox.Converters;
@@ -81,7 +79,7 @@ namespace BaseProject.Infrastructure
 
             var redisConnectionString = configuration.GetConnectionString("RedisCache");
             IConnectionMultiplexer? connectionMultiplexer = null;
-            
+
             if (!string.IsNullOrWhiteSpace(redisConnectionString))
             {
                 // Redis cache için IDistributedCache register et (diğer servisler için gerekli olabilir)
@@ -114,11 +112,6 @@ namespace BaseProject.Infrastructure
                         hostConfigurator.Password(rabbitOptions.Password);
                     });
 
-                    // ✅ Global idempotency filter - tüm consumer'lara otomatik uygulanır
-                    // Filter, IIdempotencyChecker<TMessage> implementasyonu varsa idempotency kontrolü yapar
-                    // Yoksa idempotency kontrolü atlanır (opsiyonel)
-                    cfg.UseConsumeFilter(typeof(IdempotencyFilter<>), context);
-
                     // ✅ OpenTelemetry tracing desteği - Trace ID'yi mesajlara ekle
                     cfg.ConfigureEndpoints(context);
 
@@ -129,9 +122,6 @@ namespace BaseProject.Infrastructure
                     }
                 });
             });
-
-            // ✅ Idempotency Checkers - Strategy Pattern ile idempotency kontrolü
-            services.AddScoped<IIdempotencyChecker<ActivityLogCreatedIntegrationEvent>, ActivityLogIdempotencyChecker>();
 
             // Background Services
             services.AddHostedService<Services.BackgroundServices.OutboxProcessorService>();
@@ -160,7 +150,6 @@ namespace BaseProject.Infrastructure
                 throw new InvalidOperationException(
                     "Redis connection string is required for ICacheService. Please configure RedisCache connection string.");
             }
-            services.AddScoped<IIdempotencyService, IdempotencyService>();
             services.AddTransient<ITokenService, JwtTokenService>();
             services.AddTransient<IMailService, MailService>();
             services.AddScoped<IExecutionContextAccessor, ExecutionContextAccessor>();

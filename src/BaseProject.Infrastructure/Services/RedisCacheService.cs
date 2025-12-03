@@ -24,15 +24,15 @@ public sealed class RedisCacheService : ICacheService
         IConfiguration? configuration = null)
     {
         _connectionMultiplexer = connectionMultiplexer ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
-        
+
         // Get InstanceName from configuration or use default
-        var instanceName = configuration?.GetSection("RedisCache:InstanceName").Value 
+        var instanceName = configuration?.GetSection("RedisCache:InstanceName").Value
             ?? configuration?.GetValue<string>("Redis:InstanceName")
             ?? "BaseProject";
-        
+
         // Remove trailing underscore if present (for compatibility with old "BaseProject_" format)
         instanceName = instanceName.TrimEnd('_');
-        
+
         // Use colon separator for key prefix (e.g., "BaseProject:key")
         _keyPrefix = $"{instanceName}:";
     }
@@ -46,12 +46,22 @@ public sealed class RedisCacheService : ICacheService
     /// <summary>
     /// Adds a key-value pair to Redis with optional expiration.
     /// Uses StringSetAsync to ensure consistent String data type.
+    /// 
+    /// ⚠️ WARNING: Do not serialize Entity objects directly. Use DTOs or primitive types to avoid circular reference errors.
     /// </summary>
     public async Task Add(string key, object data, DateTimeOffset? absExpr, TimeSpan? sldExpr)
     {
         if (data is null)
         {
             return;
+        }
+
+        // ✅ Mantıksal hata düzeltmesi: Entity'lerin direkt serialize edilmesini engelle
+        var dataType = data.GetType();
+        if (dataType.Namespace?.Contains("BaseProject.Domain.Entities") == true)
+        {
+            throw new InvalidOperationException(
+                $"Cannot serialize Entity type '{dataType.Name}' directly. Use DTOs or primitive types to avoid circular reference errors.");
         }
 
         var database = _connectionMultiplexer.GetDatabase();
@@ -96,7 +106,7 @@ public sealed class RedisCacheService : ICacheService
     {
         var database = _connectionMultiplexer.GetDatabase();
         var prefixedKey = GetPrefixedKey(key);
-        
+
         var value = await database.StringGetAsync(prefixedKey);
         if (!value.HasValue)
         {
@@ -127,12 +137,22 @@ public sealed class RedisCacheService : ICacheService
     /// Adds a key to Redis only if it doesn't exist (SETNX - SET if Not eXists).
     /// Atomic operation that prevents race conditions.
     /// Uses StringSetAsync with When.NotExists to ensure consistent String data type.
+    /// 
+    /// ⚠️ WARNING: Do not serialize Entity objects directly. Use DTOs or primitive types to avoid circular reference errors.
     /// </summary>
     public async Task<bool> AddIfNotExists(string key, object data, DateTimeOffset? absExpr, TimeSpan? sldExpr)
     {
         if (data is null)
         {
             return false;
+        }
+
+        // ✅ Mantıksal hata düzeltmesi: Entity'lerin direkt serialize edilmesini engelle
+        var dataType = data.GetType();
+        if (dataType.Namespace?.Contains("BaseProject.Domain.Entities") == true)
+        {
+            throw new InvalidOperationException(
+                $"Cannot serialize Entity type '{dataType.Name}' directly. Use DTOs or primitive types to avoid circular reference errors.");
         }
 
         var database = _connectionMultiplexer.GetDatabase();
